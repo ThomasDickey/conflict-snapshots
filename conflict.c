@@ -1,5 +1,5 @@
-#ifndef	lint
-static	char	Id[] = "$Header: /users/source/archives/conflict.vcs/RCS/conflict.c,v 5.1 1993/09/22 16:45:53 dickey Exp $";
+#ifndef	NO_IDENT
+static	char	Id[] = "$Header: /users/source/archives/conflict.vcs/RCS/conflict.c,v 5.2 1993/11/30 19:15:18 dickey Exp $";
 #endif
 
 /*
@@ -7,6 +7,7 @@ static	char	Id[] = "$Header: /users/source/archives/conflict.vcs/RCS/conflict.c,
  * Author:	T.E.Dickey
  * Created:	15 Apr 1988
  * Modified:
+ *		28 Nov 1993, adaptation to MS-DOS.
  *		22 Sep 1993, gcc-warnings, memory leaks.
  *		17 Jul 1992, corrected error parsing pathlist.
  *		22 Oct 1991, converted to ANSI
@@ -38,7 +39,6 @@ static	char	Id[] = "$Header: /users/source/archives/conflict.vcs/RCS/conflict.c,
  *		lines.
  */
 
-#define		CUR_PTYPES	/* include curses-definitions */
 #define		DIR_PTYPES	/* include directory-definitions */
 #define		STR_PTYPES
 #include	<ptypes.h>
@@ -47,6 +47,8 @@ static	char	Id[] = "$Header: /users/source/archives/conflict.vcs/RCS/conflict.c,
 #include	<td_qsort.h>
 
 #define	CHUNK	0xff		/* (2**n) - 1 chunk for reducing realloc's */
+
+#ifdef	unix
 #define	IS_A_NODE(j)		(ip->node[j].device != 0\
 			||	 ip->node[j].inode  != 0)
 #define	SAME_NODE(j,k)		(ip->node[j].device == ip->node[k].device\
@@ -56,6 +58,15 @@ typedef	struct	{
 		dev_t	device;
 		ino_t	inode;
 	} NODE;
+#endif	/* unix */
+
+#ifdef	MSDOS
+#define	IS_A_NODE(j)		(ip->node[j].flags != 0)
+#define	SAME_NODE(j,k)		TRUE	/* always on the same machine? */
+typedef	struct	{
+		int	flags;
+	} NODE;
+#endif
 
 typedef	struct	{
 		char	*name;	/* name of executable file */
@@ -73,11 +84,24 @@ static	unsigned total,
 		path_len;	/* maximum number of items in path */
 static	int	a_opt,		/* shows all pathnames, even if no conflict */
 		l_opt,		/* long report: shows all items */
-		v_opt,		/* verbose */
-		my_uid, my_gid, root;
+		v_opt;		/* verbose */
 static	char	*w_opt	= "",	/* pads listing */
 		*w_opt_text = "--------";
 
+#ifdef unix
+static	int	my_uid, my_gid;
+#define	im_root (my_uid == 0)
+#endif
+
+#ifdef	MSDOS
+/* executable file-types, ordered by precedence */
+static	char	*exe_types[] = {
+		"PIF",
+		"BAT",
+		"EXE",
+		"COM"
+		};
+#endif
 /*
  * comparison procedure used for sorting list of names for display
  */
@@ -98,7 +122,7 @@ node_alloc(_AR0)
 {
 	int	size	= sizeof(NODE) * path_len;
 	char	*vec	= doalloc((char *)0, (unsigned)size);
-	bzero(vec, size);	/* zeroed device & inode don't exist! */
+	memset(vec, 0, size);	/* zeroed device & inode don't exist! */
 #ifdef	lint
 	return ((NODE *)0);
 #else
@@ -110,6 +134,7 @@ node_alloc(_AR0)
  * save information from the current stat-block so we can test for repeated
  * instances of the file.
  */
+#ifdef	unix
 static
 void	node_found(
 	_ARX(INPATH *,	ip)
@@ -123,6 +148,17 @@ void	node_found(
 	ip->node[inx].device = sb->st_dev;
 	ip->node[inx].inode  = sb->st_ino;
 }
+#define	FoundNode(ip,inx) node_found(ip,inx,&sb)
+#endif	/* unix */
+
+#ifdef	MSDOS
+static
+void	node_found(INPATH *ip, int inx, int flags)
+{
+	ip->node[inx].flags |= flags;
+}
+#define	FoundNode(ip,inx) node_found(ip,inx,ok)
+#endif	/* MSDOS */
 
 /*
  * Display the conflicting items
@@ -135,22 +171,36 @@ void	show_conflict(
 	_DCL(int,	len)
 	_DCL(INPATH *,	ip)
 {
-	register int j, d;
+	register int j;
 	auto	int	k = -1;
 
 	for (j = 0; j < len; j++) {
-		d = '-';
+#ifdef	unix
+		register int d = '-';
 		if (ip != 0) {
 			if (IS_A_NODE(j)) {
 				d = '*';
-				if (k >= 0) {
+				if (k < 0) {
+					k = j;	/* latch first index */
+				} else {
 					if (!SAME_NODE(j,k))
 						d = '+';
-				} else
-					k = j;	/* latch first index */
+				}
 			}
 		}
 		PRINTF("%s%c", w_opt, d);
+#endif
+#ifdef	MSDOS
+		char flags[5];
+		(void)strcpy(flags, "----");
+		if (ip != 0 && IS_A_NODE(j)) {
+			for (k = 0; k < SIZEOF(exe_types); k++) {
+				if ((1 << k) & ip->node[j].flags)
+					flags[k] = *exe_types[k];
+			}
+		}
+		PRINTF("%s%s", w_opt, flags);
+#endif
 	}
 }
 
@@ -219,6 +269,47 @@ int	had_conflict(
 	return (FALSE);
 }
 
+#ifdef	MSDOS
+/* Returns nonzero if the given filename has an executable-suffix */
+static
+int	ExecutableType(
+	_AR1(char *,	name))
+	_DCL(char *,	name)
+{
+	register int k;
+	char	*type = ftype(name);
+	char	temp[20];
+	type = strucpy(temp, type);
+	if (*type++ == '.') {
+		for (k = 0; k < SIZEOF(exe_types); k++) {
+			if (!strcmp(type, exe_types[k]))
+				return (1<<k);
+		}
+	}
+	return 0;
+}
+
+/* Compare two leaf-names, ignoring their suffix. */
+static
+int	SameName(
+	_ARX(char *,	a)
+	_AR1(char *,	b)
+		)
+	_DCL(char *,	a)
+	_DCL(char *,	b)
+{
+	char	*type_a = ftype(a);
+	char	*type_b = ftype(b);
+	if (type_a - a == type_b - b) {
+		if (!strncmp(a, b, (size_t)(type_a - a)))
+			return TRUE;
+	}
+	return FALSE;
+}
+#else	/* unix */
+#define SameName(a,b) !strcmp(a,b)
+#endif
+
 static
 void	conflict(
 	_ARX(char *,	path)
@@ -251,11 +342,9 @@ void	conflict(
 			/* If arguments are given, restrict search to them */
 			if (argc > optind) {
 				for (j = optind; j < argc; j++) {
-					if ((s = strrchr(argv[j], '/')) != NULL)
-						s++;
-					else
+					if ((s = fleaf(argv[j])) == NULL)
 						s = argv[j];
-					if (!strcmp(s, de->d_name)) {
+					if (SameName(s, de->d_name)) {
 						found = TRUE;
 						break;
 					}
@@ -269,24 +358,29 @@ void	conflict(
 			if ((sb.st_mode & S_IFMT) != S_IFREG)
 				continue;
 
+#ifdef	unix
 #define	isEXEC(n)	(sb.st_mode & (S_IEXEC >> n))
 
 			if (isEXEC(6))		/* world-executable */
 				ok = TRUE;
-			else if ((root || (my_gid == sb.st_gid))
+			else if ((im_root || (my_gid == sb.st_gid))
 			&&	isEXEC(3))	/* group-executable */
 				ok = TRUE;
-			else if ((root || (my_uid == sb.st_uid))
+			else if ((im_root || (my_uid == sb.st_uid))
 			&&	isEXEC(0))	/* owner-executable */
 				ok = TRUE;
+#endif
+#ifdef	MSDOS
+			ok = ExecutableType(de->d_name);
+#endif
 			if (!ok)
 				continue;
 
 			/* Find the name in our array of all names */
 			found	= FALSE;
 			for (j = 0; j < total; j++) {
-				if (!strcmp(inpath[j].name, de->d_name)) {
-					node_found(&inpath[j], inx, &sb);
+				if (SameName(inpath[j].name, de->d_name)) {
+					FoundNode(&inpath[j], inx);
 					found = TRUE;
 					break;
 				}
@@ -301,7 +395,7 @@ void	conflict(
 				j = total++;
 				inpath[j].name = stralloc(de->d_name);
 				inpath[j].node = node_alloc();
-				node_found(&inpath[j], inx, &sb);
+				FoundNode(&inpath[j], inx);
 			}
 			if (v_opt > 1)
 				PRINTF("%c %s/%s\n",
@@ -330,7 +424,7 @@ void	usage(_AR0)
 		,"  -w number  expand width of display by number of columns"
 	};
 	register int	j;
-	for (j = 0; j < sizeof(tbl)/sizeof(tbl[0]); j++)
+	for (j = 0; j < SIZEOF(tbl); j++)
 		FPRINTF(stderr, "%s\n", tbl[j]);
 	FFLUSH(stderr);
 	(void)exit(FAIL);
@@ -339,7 +433,9 @@ void	usage(_AR0)
 /*ARGSUSED*/
 _MAIN
 {
+#if	NO_LEAKS
 	unsigned free_len;
+#endif
 	register int	found, j, k;
 	char	*s, *t,
 		**absolute,
@@ -351,7 +447,7 @@ _MAIN
 	case 'a':	a_opt = TRUE;	break;
 	case 'l':	l_opt = TRUE;	break;
 	case 'v':	v_opt++;	break;
-	case 'w':	k = strtol(optarg, &t, 0);
+	case 'w':	k = (int)strtol(optarg, &t, 0);
 			if (*t != EOS || k < 0)
 				usage();
 			k = strlen(w_opt_text) - k;
@@ -368,26 +464,35 @@ _MAIN
 	PRINTF("Current working directory is \"%s\"\n", dot);
 
 	pathlist = stralloc(getenv("PATH"));
-	for (s = pathlist, j = 0; *s; s++)
-		if (*s == ':')
+#ifdef	MSDOS
+	/* look in current directory before looking in $PATH */
+	s = doalloc((char *)0, strlen(pathlist)+3);
+	FORMAT(s, ".%c%s", PATHLIST_SEP, pathlist);
+	free(pathlist);
+	pathlist = s;
+#endif
+	for (s = pathlist, j = 0; *s != EOS; s++)
+		if (*s == PATHLIST_SEP)
 			j++;
 	absolute = vecalloc(path_len = ++j);
 	relative = vecalloc(path_len);
 
-	my_uid = getuid();
-	my_gid = getgid();
-	root   = (my_uid == 0);
+#ifdef	unix
+	my_uid  = getuid();
+	my_gid  = getgid();
+#endif
 
 	for (s = pathlist, j = 0; *s;) {
 
-		for (t = s; *t; t++)
-			if (*t == ':')
+		for (k = 0; s[k] != EOS; k++)
+			if (s[k] == PATHLIST_SEP)
 				break;
-		if (s == t) {	/* should have null-field only at beginning */
+		t = s + k;
+		if (k == 0) {	/* should have null-field only at beginning */
 			s++;
 			continue;
 		}
-		strncpy(bfr, s, (size_t)(t-s))[t-s] = EOS;
+		strncpy(bfr, s, (size_t)(k))[k] = EOS;
 		abspath(strcpy(full_path, bfr));
 		s = *t ? t+1 : t;
 
@@ -415,7 +520,9 @@ _MAIN
 			j++;
 		}
 	}
+#if	NO_LEAKS
 	free_len = path_len = j;	/* reduce to non-redundant paths */
+#endif
 
 	if (!a_opt) {
 		compress_list(relative);
