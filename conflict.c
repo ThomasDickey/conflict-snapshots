@@ -1,5 +1,5 @@
 #ifndef	lint
-static	char	Id[] = "$Header: /users/source/archives/conflict.vcs/RCS/conflict.c,v 4.0 1992/07/17 09:51:02 ste_cm Rel $";
+static	char	Id[] = "$Header: /users/source/archives/conflict.vcs/RCS/conflict.c,v 5.0 1993/05/06 11:46:50 ste_cm Rel $";
 #endif
 
 /*
@@ -41,6 +41,9 @@ static	char	Id[] = "$Header: /users/source/archives/conflict.vcs/RCS/conflict.c,
 #define		STR_PTYPES
 #include	<ptypes.h>
 
+#define	QSORT_SRC	INPATH
+#include	<td_qsort.h>
+
 #define	CHUNK	0xff		/* (2**n) - 1 chunk for reducing realloc's */
 #define	IS_A_NODE(j)		(ip->node[j].device != 0\
 			||	 ip->node[j].inode  != 0)
@@ -77,13 +80,10 @@ static	char	*w_opt	= "",	/* pads listing */
  * comparison procedure used for sorting list of names for display
  */
 static
-compar(
-_ARX(INPATH *,	p1)
-_AR1(INPATH *,	p2)
-	)
-_DCL(INPATH *,	p1)
-_DCL(INPATH *,	p2)
+QSORT_FUNC(compar)
 {
+	QSORT_CAST(q1,p1)
+	QSORT_CAST(q2,p2)
 	return (strcmp(p1->name, p2->name));
 }
 
