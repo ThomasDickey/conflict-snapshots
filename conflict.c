@@ -1,5 +1,5 @@
 #ifndef	lint
-static	char	Id[] = "$Header: /users/source/archives/conflict.vcs/RCS/conflict.c,v 3.1 1991/10/22 16:53:11 dickey Exp $";
+static	char	Id[] = "$Header: /users/source/archives/conflict.vcs/RCS/conflict.c,v 4.0 1992/07/17 09:51:02 ste_cm Rel $";
 #endif
 
 /*
@@ -7,6 +7,7 @@ static	char	Id[] = "$Header: /users/source/archives/conflict.vcs/RCS/conflict.c,
  * Author:	T.E.Dickey
  * Created:	15 Apr 1988
  * Modified:
+ *		17 Jul 1992, corrected error parsing pathlist.
  *		22 Oct 1991, converted to ANSI
  *		21 May 1991, added "-a" option, making default more compact by
  *			     suppressing directories which contain no conflicts
@@ -374,15 +375,19 @@ char	*s, *t,
 	my_gid = getgid();
 	root   = (my_uid == 0);
 
-	for (s = pathlist, j = 0; *s; s++) {
+	for (s = pathlist, j = 0; *s;) {
+
 		for (t = s; *t; t++)
 			if (*t == ':')
 				break;
-		if (s == t)
+		if (s == t) {	/* should have null-field only at beginning */
+			s++;
 			continue;
+		}
 		strncpy(bfr, s, (size_t)(t-s))[t-s] = EOS;
 		abspath(strcpy(full_path, bfr));
-		s = t;
+		s = *t ? t+1 : t;
+
 		found = FALSE;
 		for (k = 0; k < j; k++) {
 			if (!strcmp(full_path, absolute[k])) {
