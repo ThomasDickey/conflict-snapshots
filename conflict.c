@@ -1,5 +1,5 @@
 #ifndef	lint
-static	char	Id[] = "$Header: /users/source/archives/conflict.vcs/RCS/conflict.c,v 5.0 1993/05/06 11:46:50 ste_cm Rel $";
+static	char	Id[] = "$Header: /users/source/archives/conflict.vcs/RCS/conflict.c,v 5.1 1993/09/22 16:45:53 dickey Exp $";
 #endif
 
 /*
@@ -7,6 +7,7 @@ static	char	Id[] = "$Header: /users/source/archives/conflict.vcs/RCS/conflict.c,
  * Author:	T.E.Dickey
  * Created:	15 Apr 1988
  * Modified:
+ *		22 Sep 1993, gcc-warnings, memory leaks.
  *		17 Jul 1992, corrected error parsing pathlist.
  *		22 Oct 1991, converted to ANSI
  *		21 May 1991, added "-a" option, making default more compact by
@@ -37,6 +38,7 @@ static	char	Id[] = "$Header: /users/source/archives/conflict.vcs/RCS/conflict.c,
  *		lines.
  */
 
+#define		CUR_PTYPES	/* include curses-definitions */
 #define		DIR_PTYPES	/* include directory-definitions */
 #define		STR_PTYPES
 #include	<ptypes.h>
@@ -109,14 +111,14 @@ node_alloc(_AR0)
  * instances of the file.
  */
 static
-node_found(
-_ARX(INPATH *,	ip)
-_ARX(int,	inx)
-_AR1(struct stat *,sb)
-	)
-_DCL(INPATH *,	ip)
-_DCL(int,	inx)
-_DCL(struct stat *,sb)
+void	node_found(
+	_ARX(INPATH *,	ip)
+	_ARX(int,	inx)
+	_AR1(STAT *,	sb)
+		)
+	_DCL(INPATH *,	ip)
+	_DCL(int,	inx)
+	_DCL(STAT *,	sb)
 {
 	ip->node[inx].device = sb->st_dev;
 	ip->node[inx].inode  = sb->st_ino;
@@ -126,12 +128,12 @@ _DCL(struct stat *,sb)
  * Display the conflicting items
  */
 static
-show_conflict(
-_ARX(int,	len)
-_AR1(INPATH *,	ip)
-	)
-_DCL(int,	len)
-_DCL(INPATH *,	ip)
+void	show_conflict(
+	_ARX(int,	len)
+	_AR1(INPATH *,	ip)
+		)
+	_DCL(int,	len)
+	_DCL(INPATH *,	ip)
 {
 	register int j, d;
 	auto	int	k = -1;
@@ -156,9 +158,9 @@ _DCL(INPATH *,	ip)
  * compresses the list of paths, removing those which had no conflicts.
  */
 static
-compress_list(
-_AR1(char **,	vec))
-_DCL(char **,	vec)
+void	compress_list(
+	_AR1(char **,	vec))
+	_DCL(char **,	vec)
 {
 	register int	j, k, jj;
 	int	compress;
@@ -181,6 +183,7 @@ _DCL(char **,	vec)
 		if (compress) {
 			if (v_opt)
 				FPRINTF(stderr, "no conflict:%s\n", vec[j]);
+			free(vec[j]);
 			for (jj = j+1; jj < path_len; jj++)
 				vec[jj-1] = vec[jj];
 			for (k = 0; k < total; k++) {
@@ -198,9 +201,9 @@ _DCL(char **,	vec)
  * returns true iff we have two instances of the same name
  */
 static
-had_conflict(
-_AR1(INPATH *,	ip))
-_DCL(INPATH *,	ip)
+int	had_conflict(
+	_AR1(INPATH *,	ip))
+	_DCL(INPATH *,	ip)
 {
 	register int	j;
 	auto	int	first	= TRUE;
@@ -217,26 +220,26 @@ _DCL(INPATH *,	ip)
 }
 
 static
-conflict(
-_ARX(char *,	path)
-_ARX(int,	inx)
-_ARX(int,	argc)
-_AR1(char **,	argv)
-	)
-_DCL(char *,	path)
-_DCL(int,	inx)
-_DCL(int,	argc)
-_DCL(char **,	argv)
+void	conflict(
+	_ARX(char *,	path)
+	_ARX(int,	inx)
+	_ARX(int,	argc)
+	_AR1(char **,	argv)
+		)
+	_DCL(char *,	path)
+	_DCL(int,	inx)
+	_DCL(int,	argc)
+	_DCL(char **,	argv)
 {
-	auto	DIR		*dp;
-	auto	struct	direct	*de;
-	auto	struct	stat	sb;
+	auto	DIR	*dp;
+	auto	DIRENT	*de;
+	auto	STAT	sb;
 	register int		j;
 
-	if (dp = opendir(path)) {
+	if ((dp = opendir(path)) != NULL) {
 		(void)chdir(path);
 
-		while (de = readdir(dp)) {
+		while ((de = readdir(dp)) != NULL) {
 		register
 		int	ok	= FALSE,
 			found	= FALSE;
@@ -248,7 +251,7 @@ _DCL(char **,	argv)
 			/* If arguments are given, restrict search to them */
 			if (argc > optind) {
 				for (j = optind; j < argc; j++) {
-					if (s = strrchr(argv[j], '/'))
+					if ((s = strrchr(argv[j], '/')) != NULL)
 						s++;
 					else
 						s = argv[j];
@@ -311,7 +314,7 @@ _DCL(char **,	argv)
 }
 
 static
-usage(_AR0)
+void	usage(_AR0)
 {
 	static	char	*tbl[] = {
 		 "Usage: conflict [options] [list_of_files]"
@@ -329,20 +332,20 @@ usage(_AR0)
 	register int	j;
 	for (j = 0; j < sizeof(tbl)/sizeof(tbl[0]); j++)
 		FPRINTF(stderr, "%s\n", tbl[j]);
-	(void)fflush(stderr);
+	FFLUSH(stderr);
 	(void)exit(FAIL);
 }
 
 /*ARGSUSED*/
 _MAIN
 {
-register
-int	found, j, k;
-char	*s, *t,
-	**absolute,
-	**relative,
-	full_path[BUFSIZ],
-	bfr[BUFSIZ];
+	unsigned free_len;
+	register int	found, j, k;
+	char	*s, *t,
+		**absolute,
+		**relative,
+		full_path[BUFSIZ],
+		bfr[BUFSIZ];
 
 	while ((j = getopt(argc, argv, "?alvw:")) != EOF) switch (j) {
 	case 'a':	a_opt = TRUE;	break;
@@ -403,8 +406,8 @@ char	*s, *t,
 				PRINTF("> %s\n", bfr);
 			} else if (v_opt) {
 				FPRINTF(stderr, "%s", bfr);
-				(void) fflush (stdout);
-				(void) fflush (stderr);
+				FFLUSH(stdout);
+				FFLUSH(stderr);
 			}
 			conflict(absolute[j], j, argc, argv);
 			if (!a_opt && v_opt)
@@ -412,7 +415,7 @@ char	*s, *t,
 			j++;
 		}
 	}
-	path_len = j;		/* reduce to non-redundant paths */
+	free_len = path_len = j;	/* reduce to non-redundant paths */
 
 	if (!a_opt) {
 		compress_list(relative);
@@ -431,6 +434,16 @@ char	*s, *t,
 			}
 		}
 	}
+#if NO_LEAKS
+	for (j = 0; j < free_len; j++) {
+		free(absolute[j]);
+	}
+	for (j = 0; j < path_len; j++) {
+		free(relative[j]);
+	}
+	vecfree(absolute);
+	vecfree(relative);
+#endif
 	(void)exit(SUCCESS);
 	/*NOTREACHED*/
 }
