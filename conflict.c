@@ -1,5 +1,5 @@
 #ifndef	lint
-static	char	sccs_id[] = "@(#)conflict.c	1.1 88/04/15 09:19:29";
+static	char	sccs_id[] = "@(#)conflict.c	1.4 88/08/15 07:55:10";
 #endif	lint
 
 /*
@@ -7,6 +7,7 @@ static	char	sccs_id[] = "@(#)conflict.c	1.1 88/04/15 09:19:29";
  * Author:	T.E.Dickey
  * Created:	15 Apr 1988
  * Modified:
+ *		11 Aug 1988, port to apollo sys5 environment
  *
  * Function:	Reports pathname conflicts by making a list of the directories
  *		which are listed in the environment variable PATH, and then
@@ -22,34 +23,30 @@ static	char	sccs_id[] = "@(#)conflict.c	1.1 88/04/15 09:19:29";
  *		number of bits in a long.
  */
 
-#include	<stdio.h>
-#include	<sys/types.h>
-#include	<sys/dir.h>
-#include	<sys/stat.h>
+#define		DIR_PTYPES	/* include directory-definitions */
+#include	"ptypes.h"
 extern	int	optind;		/* index in 'argv[]' of first argument */
 extern	char	**vecalloc();
-extern	char	*doalloc(),
-		*getcwd(),
+extern	char	*getcwd(),
 		*getenv(),
-		*rindex(),
+		*strrchr(),
 		*stralloc(),
 		*strncpy();
-
-#define	PRINTF	(void)printf
-#define	TRUE	(1)
-#define	FALSE	(0)
-#define	EOS	'\0'
 
 typedef	struct	{
 		char	*name;	/* name of executable file */
 		long	mask;	/* relative position in path, bit-vector */
 	} INPATH;
 
+#define	def_doalloc	INPATH_alloc
+	/*ARGSUSED*/
+	def_DOALLOC(INPATH)
+
 static	INPATH	*inpath;
 static	char	*pathlist;
 static	char	dot[BUFSIZ];
-static	int	total,
-		width,
+static	unsigned total;
+static	int	width,
 		l_opt,		/* long report: shows all items */
 		v_opt,		/* verbose */
 		my_uid, my_gid, root;
@@ -100,7 +97,7 @@ register int	j;
 			/* If arguments are given, restrict search to them */
 			if (argc > 1) {
 				for (j = optind; j < argc; j++) {
-					if (s = rindex(argv[j], '/'))
+					if (s = strrchr(argv[j], '/'))
 						s++;
 					else
 						s = argv[j];
@@ -144,8 +141,7 @@ register int	j;
 			/* If not there, add it */
 			if (!found) {
 				j = total++;
-				inpath = (INPATH *)doalloc(inpath,
-						sizeof(INPATH) * total);
+				inpath = DOALLOC(inpath, INPATH, total);
 				inpath[j].name = stralloc(de->d_name);
 				inpath[j].mask = mask;
 			}
@@ -215,8 +211,8 @@ char	*s, *t,
 		}
 	}
 
-	if (total > 0) {
-		qsort(inpath, total, sizeof(INPATH), compar);
+	if (total != 0) {
+		qsort((char *)inpath, (LEN_QSORT)total, sizeof(INPATH), compar);
 		for (j = 0; j < total; j++) {
 			/*
 			 * If "-l" is not selected, reject items which do not
