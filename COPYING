@@ -1,18 +1,12 @@
-$Id: COPYING,v 5.0 1993/05/05 08:13:14 ste_cm Rel $
+$Id: COPYING,v 5.2 1995/03/18 01:57:06 tom Exp $
 
 CONFLICT
 
 --------------------------------------------------------------------------------
 
-Copyright (c) 1993 Software Productivity Consortium, Inc.
-All Rights Reserved.
+Copyright 1995 by Thomas E. Dickey.  All Rights Reserved.
 
-This is proprietary property of the Software Productivity Consortium, Inc. The 
-contents of this software shall be kept confidential pursuant to the terms of 
-the Technology Management and License Agreement, as amended from time to time, 
-with the Software Productivity Consortium Limited Partnership. This software 
-shall only be disseminated in accordance with the terms and conditions of that 
-Agreement. All complete or partial copies of this software must contain a copy 
-of this statement.
-
+You may freely copy or redistribute this software, so long as there is no profit
+made from its use, sale trade or reproduction. You may not change this copyright
+notice, and it must be included in any copy made.
 

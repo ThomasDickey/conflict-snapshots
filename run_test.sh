@@ -1,7 +1,7 @@
 #!/bin/sh
-# $Id: run_test.sh,v 5.0 1991/10/22 17:05:06 ste_cm Rel $
+# $Id: run_test.sh,v 5.2 1995/03/18 13:33:43 tom Exp $
 # Run a test to show that CONFLICT is working
-BIN=`cd ../bin; pwd`
+BIN=`pwd`
 PROG=$BIN/conflict
 PATH=".:$BIN:/bin"; export PATH
 #
@@ -14,20 +14,23 @@ $PROG
 #
 cat <<eof/
 **
-**	Add a dummy executable in the current directory, producing a conflict:
+**	Set PATH = $PATH
+**	This shows conflict between different filetypes
 eof/
+$PROG -r -t.c.o. conflict
+cat <<eof/
+**
+**	Set PATH = $PATH
+**	This repeats the last test, with pathnames-only
+eof/
+$PROG -p -r -t.c.o. conflict
+cat <<eof/
+**
+**	Add a dummy executable in the temp-directory, producing a conflict:
+eof/
+cd /tmp
 rm -f conflict
 echo test >conflict
 chmod 755 conflict
 $PROG
 rm -f conflict
-#
-cat <<eof/
-**
-**	Change directories to
-**		$BIN
-**	Show conflict (should be none, since CONFLICT eliminates the
-**	redundancy with ".":
-eof/
-cd ../bin
-$PROG
