@@ -1,4 +1,8 @@
-MANIFEST for conflict, version t19880815
+MANIFEST for conflict, version t19911022
 --------------------------------------------------------------------------------
 MANIFEST                        this file
+COPYING                         collective copyright notice for 'conflict'
+README                          brief description of 'conflict'
+conflict.1                      UNIX manual-page for 'conflict'
 conflict.c                      'conflict' main program
+run_test.sh                     UNIX test-script for 'conflict'

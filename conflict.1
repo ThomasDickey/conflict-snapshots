@@ -1,0 +1,105 @@
+.\" $Id: conflict.1,v 5.0 1991/10/22 17:04:00 ste_cm Rel $
+.de DS
+.RS
+.nf
+.sp
+..
+.de DE
+.fi
+.RE
+.sp .5
+..
+.TH CONFLICT 1
+.SH NAME
+.PP
+\fBconflict\fR \- executable-file conflict listing
+.SH USAGE
+.PP
+\fBconflict\fI [options] [file-specifications]
+.SH SYNOPSIS
+.PP
+\fBConflict\fR displays conflicting names in your execution path.
+Unlike the csh command which, it displays all of the (non-alias) executable
+files in your path.
+.SH DESCRIPTION
+.PP
+\fBConflict\fR reports pathname conflicts by making a list of the
+directories which are listed in the environment variable PATH, and
+then scanning these directories for executable files.
+If arguments are given to this program,
+the test for executable files is limited
+to the given names (after stripping the directory-prefix).
+.PP
+The first instance of a name in a given path
+(and those hard-linked to it) are marked with "*".
+Succeeding instances are marked with "+" marks.
+.PP
+The report is sent to standard output and always shows the list of
+directories.
+Conflicting names are reported on succeeding lines.
+.SH OPTIONS
+.TP
+.B \-a
+show all paths from the PATH environment variable.
+If this option is not set, only those PATH components from which a conflict
+are displayed.
+.TP
+.B \-l
+The long option directs \fBconflict\fR to display
+not only the names of conflicting files, but all executable files
+in your path.
+.TP
+.B -v
+The verbose option directs \fBconflict\fR not only
+to print a summary line for each file, but also to print a running
+summary, showing executable file (with its full path) as it is found).
+.TP
+.BI \-w number
+expand width of display by number of columns (default: one column per path).
+.SH OPERATIONS
+.PP
+\fBConflict\fR may be used to list all conflicting names in your
+path (if no arguments are given), or to find conflicts for a specified
+name.
+To list only conflicts from a particular directory "path"
+you may type
+.DS
+conflict -a path/*
+.DE
+An example of the use of \fBconflict\fR is shown below
+.DS
+bsd4.2(5) conflict
+Current working directory is "//dickey/local/dickey/src/conflict"
+-> .
+--> //dickey/local/dickey/bin
+---> //dickey/local/dickey/com
+----> /bin
+-----> /usr/bin
+------> /usr/ucb
+-------> /usr/local/bin
+--------> //flicker/local/begeddov/R2/usr/bin/X11
+---------> /site/bsd4.2/usr/ide/bin/apollo
+----------> /interbase/com
+-----------> /com
+-*--------+: args
+----*-----+: calendar
+---*------+: cc
+*+---------: conflict
+\&...
+.DE
+.SH ENVIRONMENT
+.PP
+\fBConflict\fR runs in a portable UNIX\*R environment.
+.SH FILES
+.PP
+\fBConflict\fR is a single binary module, which uses no auxiliary files.
+.SH ANTICIPATED CHANGES
+.PP
+The number of directories which are searched is currently limited
+to the number of bits in a long (e.g., 32).
+.SH SEE ALSO
+.PP
+csh (1) for a discussion of \fIwhich\fR.
+.SH AUTHOR
+.PP
+Thomas Dickey (Software Productivity Consortium).
