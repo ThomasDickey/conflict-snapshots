@@ -1,8 +1,9 @@
-MANIFEST for conflict, version t19931130
+MANIFEST for conflict, version t19940521
 --------------------------------------------------------------------------------
 MANIFEST                        this file
 COPYING                         collective copyright notice for 'conflict'
 README                          brief description of 'conflict'
 conflict.1                      UNIX manual-page for 'conflict'
 conflict.c                      'conflict' main program
+mkdirs.sh                       make directory-hierarchy (from X-windows)
 run_test.sh                     UNIX test-script for 'conflict'
