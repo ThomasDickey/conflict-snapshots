@@ -1,0 +1,26 @@
+$Id: CHANGES,v 5.3 1995/03/11 17:12:40 tom Exp $
+------------------------------------------------------------------------------
+11 Mar 1995,	use 'txtalloc()' to reduce calls on 'strcmp()', making this
+		faster.
+07 Mar 1995,	absorbed -a, -l options into -v to simplify use for library
+		scanning.
+12 Nov 1994,	use 'egress()' for better executable-tests
+28 Nov 1993,	adaptation to MS-DOS.
+22 Sep 1993,	gcc-warnings, memory leaks.
+17 Jul 1992,	corrected error parsing pathlist.
+22 Oct 1991,	converted to ANSI
+21 May 1991,	added "-a" option, making default more compact by
+		suppressing directories which contain no conflicts
+07 Dec 1989,	recoded so that we aren't constrained by the number
+		of bits in a long to record information.  A side-
+		effect of this is that we can show instances of
+		files linked (with the same name) to the first
+		instance found.
+07 Dec 1989,	added "-w" option, enhanced usage-message.
+		Corrected bug which caused wrong behavior when
+		options were given w/o names of files-to-find.
+25 Jul 1989,	moved the code which lists the pathnames down past
+		the point at which we have eliminated redundant
+		paths, to avoid a confusing display.
+25 Jan 1989,	corrected array-index variable
+11 Aug 1988,	port to apollo sys5 environment

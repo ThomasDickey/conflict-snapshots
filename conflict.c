@@ -1,32 +1,18 @@
+/******************************************************************************
+ * Copyright 1995 by Thomas E. Dickey.  All Rights Reserved.                  *
+ *                                                                            *
+ * You may freely copy or redistribute this software, so long as there is no  *
+ * profit made from its use, sale trade or reproduction. You may not change   *
+ * this copyright notice, and it must be included in any copy made.           *
+ ******************************************************************************/
 #ifndef	NO_IDENT
-static	char	Id[] = "$Header: /users/source/archives/conflict.vcs/RCS/conflict.c,v 5.2 1993/11/30 19:15:18 dickey Exp $";
+static	char	Id[] = "$Header: /users/source/archives/conflict.vcs/RCS/conflict.c,v 5.28 1995/03/18 14:05:04 tom Exp $";
 #endif
 
 /*
  * Title:	conflict.c (path-conflict display)
  * Author:	T.E.Dickey
  * Created:	15 Apr 1988
- * Modified:
- *		28 Nov 1993, adaptation to MS-DOS.
- *		22 Sep 1993, gcc-warnings, memory leaks.
- *		17 Jul 1992, corrected error parsing pathlist.
- *		22 Oct 1991, converted to ANSI
- *		21 May 1991, added "-a" option, making default more compact by
- *			     suppressing directories which contain no conflicts
- *		07 Dec 1989, recoded so that we aren't constrained by the number
- *			     of bits in a long to record information.  A side-
- *			     effect of this is that we can show instances of
- *			     files linked (with the same name) to the first
- *			     instance found.
- *		07 Dec 1989, added "-w" option, enhanced usage-message.
- *			     Corrected bug which caused wrong behavior when
- *			     options were given w/o names of files-to-find.
- *		25 Jul 1989, moved the code which lists the pathnames down past
- *			     the point at which we have eliminated redundant
- *			     paths, to avoid a confusing display.
- *		
- *		25 Jan 1989, corrected array-index variable
- *		11 Aug 1988, port to apollo sys5 environment
  *
  * Function:	Reports pathname conflicts by making a list of the directories
  *		which are listed in the environment variable PATH, and then
@@ -39,203 +25,288 @@ static	char	Id[] = "$Header: /users/source/archives/conflict.vcs/RCS/conflict.c,
  *		lines.
  */
 
-#define		DIR_PTYPES	/* include directory-definitions */
-#define		STR_PTYPES
-#include	<ptypes.h>
-
-#define	QSORT_SRC	INPATH
-#include	<td_qsort.h>
+#include "conflict.h"
 
 #define	CHUNK	0xff		/* (2**n) - 1 chunk for reducing realloc's */
 
-#ifdef	unix
-#define	IS_A_NODE(j)		(ip->node[j].device != 0\
-			||	 ip->node[j].inode  != 0)
-#define	SAME_NODE(j,k)		(ip->node[j].device == ip->node[k].device\
-			&&	 ip->node[j].inode  == ip->node[k].inode)
-
-typedef	struct	{
-		dev_t	device;
-		ino_t	inode;
-	} NODE;
-#endif	/* unix */
-
-#ifdef	MSDOS
-#define	IS_A_NODE(j)		(ip->node[j].flags != 0)
-#define	SAME_NODE(j,k)		TRUE	/* always on the same machine? */
-typedef	struct	{
-		int	flags;
-	} NODE;
-#endif
-
-typedef	struct	{
-		char	*name;	/* name of executable file */
-		NODE	*node;	/* stat-result, for comparing */
-	} INPATH;
-
-#define	def_doalloc	INPATH_alloc
-	/*ARGSUSED*/
-	def_DOALLOC(INPATH)
-
 static	INPATH	*inpath;
-static	char	*pathlist;
-static	char	dot[BUFSIZ];
-static	unsigned total,
-		path_len;	/* maximum number of items in path */
-static	int	a_opt,		/* shows all pathnames, even if no conflict */
-		l_opt,		/* long report: shows all items */
-		v_opt;		/* verbose */
+static	DIRS	*dirs;
+static	char	*env_name;	/* e.g., "PATH" */
+static	char	*pathlist;	/* e.g., ".:/bin:/usr/bin" */
+static	char	**FileTypes;
+static	char	*dot;
+static	size_t	total,
+		path_len,	/* maximum number of items in path */
+		num_types;	/* number of file-types to scan */
+static	int	acc_mask,	/* permissions we're looking for */
+		p_opt,		/* print pathnames (not a table) */
+		v_opt,		/* verbose (repeat for different levels) */
+		do_blips;
 static	char	*w_opt	= "",	/* pads listing */
 		*w_opt_text = "--------";
 
-#ifdef unix
-static	int	my_uid, my_gid;
-#define	im_root (my_uid == 0)
+#if SYS_MSDOS || SYS_OS2
+#define DOS_upper(s) strupr(s)
+#else
+#define DOS_upper(s) s
 #endif
 
-#ifdef	MSDOS
-/* executable file-types, ordered by precedence */
-static	char	*exe_types[] = {
-		"PIF",
-		"BAT",
-		"EXE",
-		"COM"
-		};
+#if SYS_MSDOS
+#define TYPES_PATH ".COM.EXE.BAT.PIF"
 #endif
+
+#if SYS_OS2
+#define TYPES_PATH ".EXE.CMD.bat.com.sys"
+#endif
+
+static	char *	TypesOf ARGS((size_t len, INPATH *ip));
+static	int	LookupDirs ARGS((char *name, int n));
+static	int	SameTypeless ARGS((char *a, char *b));
+static	int	cmp_INPATH ARGS((const void *p1, const void *p2));
+static	int	had_conflict ARGS((INPATH *ip));
+static	type_t	LookupType ARGS((char *name));
+static	void	AddToPath ARGS((char *path));
+static	void	ScanConflicts ARGS((char *path, int inx, int argc, char **argv));
+static	void	ShowConflicts ARGS((int len, INPATH *ip));
+static	void	ShowPathnames ARGS((INPATH *ip));
+static	void	compress_list ARGS((void));
+static	void	usage ARGS((void));
+
+#if USE_INODE
+static	void	node_found ARGS((INPATH *ip, int n, type_t f, struct stat *sb));
+#else
+static	void	node_found ARGS((INPATH *ip, int n, type_t flags));
+#endif
+
 /*
  * comparison procedure used for sorting list of names for display
  */
 static
-QSORT_FUNC(compar)
+int	cmp_INPATH(p1, p2)
+	const	void	*p1;
+	const	void	*p2;
 {
-	QSORT_CAST(q1,p1)
-	QSORT_CAST(q2,p2)
-	return (strcmp(p1->name, p2->name));
-}
-
-/*
- * allocate a vector of stat-blocks so we can test for repeats/links
- */
-static
-NODE	*
-node_alloc(_AR0)
-{
-	int	size	= sizeof(NODE) * path_len;
-	char	*vec	= doalloc((char *)0, (unsigned)size);
-	memset(vec, 0, size);	/* zeroed device & inode don't exist! */
-#ifdef	lint
-	return ((NODE *)0);
-#else
-	return ((NODE *)vec);
-#endif
+	return strcmp(((INPATH *)(p1))->name, ((INPATH *)(p2))->name);
 }
 
 /*
  * save information from the current stat-block so we can test for repeated
  * instances of the file.
  */
-#ifdef	unix
+#if USE_INODE
 static
-void	node_found(
-	_ARX(INPATH *,	ip)
-	_ARX(int,	inx)
-	_AR1(STAT *,	sb)
-		)
-	_DCL(INPATH *,	ip)
-	_DCL(int,	inx)
-	_DCL(STAT *,	sb)
+void	node_found(ip, n, flags, sb)
+	INPATH *	ip;
+	int		n;
+	type_t		flags;
+	struct stat *	sb;
 {
-	ip->node[inx].device = sb->st_dev;
-	ip->node[inx].inode  = sb->st_ino;
+	NODEFLAGS(n)      |= flags;
+	ip->node[n].device = sb->st_dev;
+	ip->node[n].inode  = sb->st_ino;
 }
-#define	FoundNode(ip,inx) node_found(ip,inx,&sb)
-#endif	/* unix */
+#define	FoundNode(ip,n) node_found(ip,n,ok,&sb)
 
-#ifdef	MSDOS
+#else
 static
-void	node_found(INPATH *ip, int inx, int flags)
+void	node_found(INPATH *ip, int n, type_t flags)
 {
-	ip->node[inx].flags |= flags;
+	NODEFLAGS(n) |= flags;
 }
-#define	FoundNode(ip,inx) node_found(ip,inx,ok)
-#endif	/* MSDOS */
+#define	FoundNode(ip,n) node_found(ip,n,ok)
+#endif	/* USE_INODE */
+
+/*
+ * Look up the given name and fill-in the n'th entry of the 'dirs[]' array.
+ */
+static
+int	LookupDirs(name, n)
+	char		*name;
+	int		n;
+{
+	int	found	= FALSE;
+#if USE_INODE
+	struct	stat	sb;
+
+	if (stat(name, &sb) >= 0) {
+		dirs[n].device = sb.st_dev;
+		dirs[n].inode  = sb.st_ino;
+		found = TRUE;
+	}
+#else
+	char	resolved[MAXPATHLEN];
+	if (realpath(name, resolved) != 0) {
+		dirs[n].actual = MakeString(resolved);
+		found = TRUE;
+	}
+#endif
+	return found;
+}
 
 /*
  * Display the conflicting items
  */
 static
-void	show_conflict(
-	_ARX(int,	len)
-	_AR1(INPATH *,	ip)
-		)
-	_DCL(int,	len)
-	_DCL(INPATH *,	ip)
+void	ShowConflicts(len, ip)
+	int		len;
+	INPATH *	ip;
 {
 	register int j;
-	auto	int	k = -1;
+	int	k = -1;
+	char flags[BUFSIZ];
 
 	for (j = 0; j < len; j++) {
-#ifdef	unix
-		register int d = '-';
-		if (ip != 0) {
-			if (IS_A_NODE(j)) {
-				d = '*';
-				if (k < 0) {
-					k = j;	/* latch first index */
-				} else {
-					if (!SAME_NODE(j,k))
-						d = '+';
+		if (FileTypes == 0) {
+			register int d = '-';
+			if (ip != 0) {
+				if (IS_A_NODE(j)) {
+					d = '*';
+					if (k < 0) {
+						k = j;	/* latch first index */
+					} else {
+						if (!SAME_NODE(j,k))
+							d = '+';
+					}
+				}
+			}
+			(void)printf("%s%c", w_opt, d);
+			continue;
+		}
+
+		for (k = 0; k < num_types+2; k++)
+			flags[k] = '-';
+		flags[k-1] = EOS;
+		flags[0] = ':';
+		if (ip != 0 && IS_A_NODE(j)) {
+			for (k = 0; k < num_types; k++) {
+				if ((1 << k) & NODEFLAGS(j)) {
+					char *s = FileTypes[k];
+					int c = *s++;
+					if (c == EOS || *s == EOS)
+						c = '.';
+					else
+						c = *s;
+					flags[k+1] = c;
 				}
 			}
 		}
-		PRINTF("%s%c", w_opt, d);
-#endif
-#ifdef	MSDOS
-		char flags[5];
-		(void)strcpy(flags, "----");
-		if (ip != 0 && IS_A_NODE(j)) {
-			for (k = 0; k < SIZEOF(exe_types); k++) {
-				if ((1 << k) & ip->node[j].flags)
-					flags[k] = *exe_types[k];
-			}
-		}
-		PRINTF("%s%s", w_opt, flags);
-#endif
+		(void)printf("%s%s", w_opt, flags);
 	}
 }
 
+static
+void	ShowPathnames (ip)
+	INPATH	*ip;
+{
+	int	j, k;
+	char	bfr[MAXPATHLEN];
+
+	if (num_types != 0) {
+		(void)strcpy(bfr, ip->name);
+		*ftype(bfr) = EOS;
+	}
+
+	if (p_opt) {
+		for (j = 0; j < path_len; j++) {
+			if (NODEFLAGS(j) != 0) {
+				if (num_types != 0) {
+					for (k = 0; k < num_types; k++) {
+						if ((1<<k) & NODEFLAGS(j)) {
+							(void)printf("%s%c%s%s\n",
+								dirs[j].name,
+								PATHNAME_SEP,
+								bfr,
+								FileTypes[k]);
+						}
+					}
+				} else {
+					(void)printf("%s%c%s\n",
+						dirs[j].name,
+						PATHNAME_SEP,
+						ip->name);
+				}
+			}
+		}
+	} else if (num_types != 0) {
+		(void)printf(": %s (%s)\n", bfr, TypesOf(path_len, ip));
+	} else {
+		(void)printf(": %s\n", ip->name);
+	}
+}
+
+static
+char *	TypesOf(len, ip)
+	size_t		len;
+	INPATH *	ip;
+{
+	register int j, mask, n, k;
+#if NO_LEAKS
+	static	char	result[BUFSIZ];
+#else
+	static	char	*result;
+
+	if (result == 0)
+		result = malloc((num_types*4) + 1);
+#endif
+
+	for (j = mask = 0; j < len; j++)
+		mask |= NODEFLAGS(j);
+
+	result[0] = EOS;
+	for (n = 0, k = 1; n < num_types; n++, k <<= 1) {
+		if (k & mask) {
+			if (result[0] != EOS)
+				(void)strcat(result, ",");
+			(void)strcat(result, FileTypes[n]);
+		}
+	}
+	return result;
+}
+
 /*
- * compresses the list of paths, removing those which had no conflicts.
+ * Compress the list of paths, removing those which had no conflicts.
  */
 static
-void	compress_list(
-	_AR1(char **,	vec))
-	_DCL(char **,	vec)
+void	compress_list()
 {
 	register int	j, k, jj;
 	int	compress;
+	type_t	flags;
 
 	for (j = 0; j < path_len; j++) {
-		compress = TRUE;
-		for (k = 0; compress && (k < total); k++) {
+		for (k = 0, compress = TRUE; compress && (k < total); k++) {
 			register INPATH *ip = inpath + k;
-			if (IS_A_NODE(j)) {
-				for (jj = 0; jj < path_len; jj++) {
-					if (jj == j)
-						continue;
-					if (IS_A_NODE(jj)) {
-						compress = FALSE;
+			if ((flags = NODEFLAGS(j)) != 0) {
+				/* If there's more than one suffix found for
+				 * the current entry, we cannot compress it.
+				 */
+				while (flags != 0) {
+					if ((flags & 1) != 0)
 						break;
+					flags >>= 1;
+				}
+				if (flags == 1) {
+					for (jj = 0; jj < path_len; jj++) {
+						if (jj == j)
+							continue;
+						if (IS_A_NODE(jj)) {
+							compress = FALSE;
+							break;
+						}
 					}
+				} else {
+					compress = FALSE;
 				}
 			}
 		}
 		if (compress) {
-			if (v_opt)
-				FPRINTF(stderr, "no conflict:%s\n", vec[j]);
-			free(vec[j]);
+			if (v_opt) {
+				(void)fprintf(stderr, "no conflict:%s\n", dirs[j].name);
+				(void)fflush(stderr);
+			}
+			FreeString(dirs[j].name);
 			for (jj = j+1; jj < path_len; jj++)
-				vec[jj-1] = vec[jj];
+				dirs[jj-1] = dirs[jj];
 			for (k = 0; k < total; k++) {
 				register INPATH *ip = inpath + k;
 				for (jj = j+1; jj < path_len; jj++)
@@ -251,52 +322,56 @@ void	compress_list(
  * returns true iff we have two instances of the same name
  */
 static
-int	had_conflict(
-	_AR1(INPATH *,	ip))
-	_DCL(INPATH *,	ip)
+int	had_conflict(ip)
+	INPATH *	ip;
 {
-	register int	j;
-	auto	int	first	= TRUE;
+	register int	j, k;
+	int	first	= TRUE;
+	type_t	mask;
 
 	for (j = 0; j < path_len; j++) {
-		if (IS_A_NODE(j)) {
-			if (first)
+		if ((mask = NODEFLAGS(j)) != 0) {
+
+			if (FileTypes == 0) {
+				if (!first)
+					return TRUE;
 				first = FALSE;
-			else
-				return (TRUE);
+				continue;
+			}
+
+			for (k = 0; k < num_types; k++) {
+				if (mask & (1<<k)) {
+					if (!first)
+						return TRUE;
+					first = FALSE;
+				}
+			}
 		}
 	}
 	return (FALSE);
 }
 
-#ifdef	MSDOS
 /* Returns nonzero if the given filename has an executable-suffix */
 static
-int	ExecutableType(
-	_AR1(char *,	name))
-	_DCL(char *,	name)
+type_t	LookupType(name)
+	char *		name;
 {
 	register int k;
-	char	*type = ftype(name);
-	char	temp[20];
-	type = strucpy(temp, type);
-	if (*type++ == '.') {
-		for (k = 0; k < SIZEOF(exe_types); k++) {
-			if (!strcmp(type, exe_types[k]))
-				return (1<<k);
-		}
+	char	temp[MAXPATHLEN];
+	char	*type = DOS_upper(strcpy(temp, ftype(name)));
+
+	for (k = 0; k < num_types; k++) {
+		if (!strcmp(type, FileTypes[k]))
+			return (1<<k);
 	}
 	return 0;
 }
 
 /* Compare two leaf-names, ignoring their suffix. */
 static
-int	SameName(
-	_ARX(char *,	a)
-	_AR1(char *,	b)
-		)
-	_DCL(char *,	a)
-	_DCL(char *,	b)
+int	SameTypeless(a, b)
+	char *		a;
+	char *		b;
 {
 	char	*type_a = ftype(a);
 	char	*type_b = ftype(b);
@@ -306,80 +381,89 @@ int	SameName(
 	}
 	return FALSE;
 }
-#else	/* unix */
-#define SameName(a,b) !strcmp(a,b)
-#endif
+#define SameName(a,b) ((FileTypes == 0) ? SameString(a,b) : SameTypeless(a,b))
 
 static
-void	conflict(
-	_ARX(char *,	path)
-	_ARX(int,	inx)
-	_ARX(int,	argc)
-	_AR1(char **,	argv)
-		)
-	_DCL(char *,	path)
-	_DCL(int,	inx)
-	_DCL(int,	argc)
-	_DCL(char **,	argv)
+void	ScanConflicts(path, inx, argc, argv)
+	char *	path;
+	int	inx;
+	int	argc;
+	char **	argv;
 {
-	auto	DIR	*dp;
-	auto	DIRENT	*de;
-	auto	STAT	sb;
-	register int		j;
+	DIR		*dp;
+	struct dirent	*de;
+	struct stat	sb;
+	register int	j;
+#if SYS_MSDOS || SYS_OS2
+	char	save_wd[MAXPATHLEN];
+#endif
 
-	if ((dp = opendir(path)) != NULL) {
-		(void)chdir(path);
+	/*
+	 * When scanning a directory, we first chdir to it, mostly to make
+	 * the scan+stat work faster, but also because some systems don't
+	 * scan properly otherwise.
+	 *
+	 * MSDOS and OS/2 are a little more complicated, because each drive
+	 * has its own current directory.
+	 */
+#if SYS_MSDOS || SYS_OS2
+	(void) strcpy(save_wd, dot);
+	if (!strcmp(".", path)) {
+		path = dot;
+	} else if (!same_drive(dot, path)) {
+		if (!set_drive(path))
+			return;
+		getwd(save_wd);
+	}
+#endif
+	if (set_directory(path)
+	 && (dp = opendir(path)) != NULL) {
 
 		while ((de = readdir(dp)) != NULL) {
 		register
-		int	ok	= FALSE,
-			found	= FALSE;
-		char	*s;
+		type_t	ok	= 0;
+		int	found	= FALSE;
+		char	buffer[MAXPATHLEN];
+		char	*the_name;
 
-			if (!a_opt && v_opt)
+			if (do_blips)
 				blip('.');
+
+			(void)sprintf(buffer, "%.*s", (int)NAMLEN(de), de->d_name);
+			the_name = MakeString(DOS_upper(buffer));
 
 			/* If arguments are given, restrict search to them */
 			if (argc > optind) {
 				for (j = optind; j < argc; j++) {
-					if ((s = fleaf(argv[j])) == NULL)
-						s = argv[j];
-					if (SameName(s, de->d_name)) {
+					if (SameName(argv[j], the_name)) {
 						found = TRUE;
 						break;
 					}
 				}
-				if (!found)	continue;
+				if (!found)
+					continue;
 			}
 
 			/* Verify that the name is a file, and executable */
-			if (stat(de->d_name, &sb) < 0)
+			if (stat(the_name, &sb) < 0)
 				continue;
 			if ((sb.st_mode & S_IFMT) != S_IFREG)
 				continue;
 
-#ifdef	unix
-#define	isEXEC(n)	(sb.st_mode & (S_IEXEC >> n))
-
-			if (isEXEC(6))		/* world-executable */
-				ok = TRUE;
-			else if ((im_root || (my_gid == sb.st_gid))
-			&&	isEXEC(3))	/* group-executable */
-				ok = TRUE;
-			else if ((im_root || (my_uid == sb.st_uid))
-			&&	isEXEC(0))	/* owner-executable */
-				ok = TRUE;
-#endif
-#ifdef	MSDOS
-			ok = ExecutableType(de->d_name);
-#endif
-			if (!ok)
+#if SYS_UNIX || SYS_OS2
+			if (access(the_name, acc_mask) < 0)
 				continue;
+			ok = 1;
+#endif
+			if (FileTypes != 0) {
+				if ((ok = LookupType(the_name)) == 0)
+					continue;
+			}
 
 			/* Find the name in our array of all names */
 			found	= FALSE;
 			for (j = 0; j < total; j++) {
-				if (SameName(inpath[j].name, de->d_name)) {
+				if (SameName(inpath[j].name, the_name)) {
 					FoundNode(&inpath[j], inx);
 					found = TRUE;
 					break;
@@ -389,26 +473,56 @@ void	conflict(
 			/* If not there, add it */
 			if (!found) {
 				if (!(total & CHUNK)) {
-					unsigned need = (total | CHUNK) + 1;
-					inpath = DOALLOC(inpath, INPATH, need);
+					size_t need = ((total*3)/2 | CHUNK) + 1;
+					if (inpath != 0)
+						inpath = TypeRealloc(INPATH,
+								inpath, need);
+					else
+						inpath = TypeAlloc(INPATH, need);
 				}
 				j = total++;
-				inpath[j].name = stralloc(de->d_name);
-				inpath[j].node = node_alloc();
+				inpath[j].name = the_name;
+				inpath[j].node = TypeAlloc(NODE, path_len);
 				FoundNode(&inpath[j], inx);
 			}
-			if (v_opt > 1)
-				PRINTF("%c %s/%s\n",
+			if (v_opt > 2) {
+				(void)printf("%c %s/%s\n",
 					found ? '+' : '*',
-					path, de->d_name);
+					path, the_name);
+			}
 		}
-		closedir(dp);
-		(void)chdir(dot);
+		(void)closedir(dp);
+	}
+#if SYS_MSDOS || SYS_OS2
+	if (strcmp(dot, save_wd)) {
+		chdir (save_wd);
+	}
+#endif
+	(void)set_directory(dot);
+}
+
+/*
+ * Build up the 'pathlist' string in the same form as we expect from an
+ * environment variable, from command-line option values.
+ */
+static
+void	AddToPath(path)
+	char	*path;
+{
+	size_t	need = strlen(path) + 1;
+
+	if (pathlist != 0) {
+		size_t have = strlen(pathlist);
+		pathlist = realloc(pathlist, have + need + 1);
+		(void)sprintf(pathlist + have, "%c%s", PATHLIST_SEP, path);
+	} else {
+		pathlist = malloc(need);
+		(void)strcpy(pathlist, path);
 	}
 }
 
 static
-void	usage(_AR0)
+void	usage()
 {
 	static	char	*tbl[] = {
 		 "Usage: conflict [options] [list_of_files]"
@@ -418,139 +532,281 @@ void	usage(_AR0)
 		,"with \"*\", succeeding instances with \"+\" marks."
 		,""
 		,"Options are:"
-		,"  -a         show all paths from $PATH"
-		,"  -l         list all executable files (even w/o conflict)"
+		,"  -e name    specify another environment variable than $PATH"
+		,"  -p         print pathnames only"
+		,"  -r         look for read-able files"
+		,"  -t types   look only for given file-types"
 		,"  -v         (verbose) show names found in each directory"
-		,"  -w number  expand width of display by number of columns"
+		,"             once: shows all directory names"
+		,"             twice: shows all filenames"
+		,"  -w         look for write-able files"
+		,"  -W number  expand width of display by number of columns"
+		,"  -x         look for execut-able files (default)"
+		,""
+		,"Also, C-preprocessor-style -I and -L options"
 	};
 	register int	j;
 	for (j = 0; j < SIZEOF(tbl); j++)
-		FPRINTF(stderr, "%s\n", tbl[j]);
-	FFLUSH(stderr);
-	(void)exit(FAIL);
+		(void)fprintf(stderr, "%s\n", tbl[j]);
+	(void)fflush(stderr);
+	(void)exit(EXIT_FAILURE);
 }
 
-/*ARGSUSED*/
-_MAIN
+void	failed(s)
+	char	*s;
 {
-#if	NO_LEAKS
-	unsigned free_len;
-#endif
+	perror(s);
+	exit(EXIT_FAILURE);
+}
+
+int	main(argc, argv)
+	int	argc;
+	char	*argv[];
+{
 	register int	found, j, k;
-	char	*s, *t,
-		**absolute,
-		**relative,
-		full_path[BUFSIZ],
-		bfr[BUFSIZ];
+	char	*s, *t;
+	char	*type_list = 0;
+	char	bfr[MAXPATHLEN];
 
-	while ((j = getopt(argc, argv, "?alvw:")) != EOF) switch (j) {
-	case 'a':	a_opt = TRUE;	break;
-	case 'l':	l_opt = TRUE;	break;
-	case 'v':	v_opt++;	break;
-	case 'w':	k = (int)strtol(optarg, &t, 0);
-			if (*t != EOS || k < 0)
-				usage();
-			k = strlen(w_opt_text) - k;
-			if (k < 0)
-				k = 0;
-			w_opt = w_opt_text + k;
-			break;
-	default:	usage();
-			/*NOTREACHED*/
+	while ((j = getopt(argc, argv, "D:e:I:prt:U:vwW:x")) != EOF) {
+		switch (j) {
+		case 'e':	env_name = optarg;	break;
+		case 't':	type_list = optarg;	break;
+		case 'v':	v_opt++;		break;
+		case 'p':	p_opt = TRUE;		break;
+
+		case 'W':	k = (int)strtol(optarg, &t, 0);
+				if (*t != EOS || k < 0)
+					usage();
+				k = strlen(w_opt_text) - k;
+				if (k < 0)
+					k = 0;
+				w_opt = w_opt_text + k;
+				break;
+
+		case 'r':	acc_mask |= R_OK;	break;
+		case 'w':	acc_mask |= W_OK;	break;
+		case 'x':	acc_mask |= X_OK;	break;
+
+			/*
+			 * The 'U' and 'D' options are parsed to simplify
+			 * using C-preprocessor options to scan for include-
+			 * files.
+			 */
+		case 'U':	/* ignored */		break;
+		case 'D':	/* ignored */		break;
+		case 'I':	AddToPath(optarg);	break;
+		case 'L':	AddToPath(optarg);	break;
+
+		default:	usage();
+				/*NOTREACHED*/
+		}
 	}
 
-	if (getwd(dot) == 0)
+	/* The "-v" and "-p" options aren't meaningful in combination */
+	if (v_opt && p_opt)
+		usage();
+
+	/* The remaining arguments are the programs/symbols that we're looking
+	 * for.  Reduce the argument-list to the leaf-names (stripping paths).
+	 */
+	if (argc > optind) {
+		for (j = optind; j < argc; j++) {
+			argv[j] = MakeString(DOS_upper(fleaf(argv[j])));
+		}
+	}
+
+	do_blips = ((v_opt > 1) && isatty(fileno(stderr))); 
+
+	if (acc_mask == 0)
+		acc_mask = X_OK;
+
+	/*
+	 * Get the current working-directory, so we have a reference point to
+	 * go back after scanning directories.
+	 */
+	if (getwd(bfr) == 0)
 		failed("getcwd");
-	PRINTF("Current working directory is \"%s\"\n", dot);
+	dot = MakeString(bfr);
+	if (!p_opt)
+		(void)printf("Current working directory is \"%s\"\n", dot);
 
-	pathlist = stralloc(getenv("PATH"));
-#ifdef	MSDOS
-	/* look in current directory before looking in $PATH */
-	s = doalloc((char *)0, strlen(pathlist)+3);
-	FORMAT(s, ".%c%s", PATHLIST_SEP, pathlist);
-	free(pathlist);
-	pathlist = s;
+	/*
+	 * Obtain the list of directories that we'll scan.
+	 */
+	if (pathlist == 0) {
+		if (env_name == 0)
+			env_name = "PATH";
+
+		if ((s = getenv(env_name)) != 0)
+			pathlist = strdup(s);
+		else
+			failed(env_name);
+
+#if SYS_MSDOS || SYS_OS2
+		if (!strcmp(env_name, "PATH")) {
+			/* look in current directory before looking in $PATH */
+			s = malloc(strlen(pathlist)+3);
+			(void)sprintf(s, ".%c%s", PATHLIST_SEP, pathlist);
+			free(pathlist);
+			pathlist = s;
+		}
 #endif
-	for (s = pathlist, j = 0; *s != EOS; s++)
+	}
+	for (s = DOS_upper(pathlist), path_len = 1; *s != EOS; s++)
 		if (*s == PATHLIST_SEP)
-			j++;
-	absolute = vecalloc(path_len = ++j);
-	relative = vecalloc(path_len);
+			path_len++;
+	dirs = TypeAlloc(DIRS, path_len);
 
-#ifdef	unix
-	my_uid  = getuid();
-	my_gid  = getgid();
+	/*
+	 * Reconstruct the type-list (if any) as an array to simplify scanning.
+	 */
+#if SYS_MSDOS || SYS_OS2
+	 if (type_list == 0) {
+		if (!strcmp(env_name, "PATH"))
+			type_list = TYPES_PATH;
+	}
 #endif
-
-	for (s = pathlist, j = 0; *s;) {
-
-		for (k = 0; s[k] != EOS; k++)
-			if (s[k] == PATHLIST_SEP)
-				break;
-		t = s + k;
-		if (k == 0) {	/* should have null-field only at beginning */
-			s++;
-			continue;
-		}
-		strncpy(bfr, s, (size_t)(k))[k] = EOS;
-		abspath(strcpy(full_path, bfr));
-		s = *t ? t+1 : t;
-
-		found = FALSE;
-		for (k = 0; k < j; k++) {
-			if (!strcmp(full_path, absolute[k])) {
-				found = TRUE;
-				break;
+	if (type_list != 0) {
+		type_list = DOS_upper(strdup(type_list));
+		for (s = type_list, num_types = 0; *s != EOS; s++) {
+			if (*s == '.') {
+				num_types++;
+#if SYS_UNIX			/* "." and "" are different types */
+				if ((s[1] == '.') || (s[1] == EOS))
+					num_types++;
+#endif
 			}
 		}
-		if (!found) {
-			absolute[j] = stralloc(full_path);
-			relative[j] = stralloc(bfr);
-			if (a_opt) {
-				show_conflict(j+1, (INPATH *)0);
-				PRINTF("> %s\n", bfr);
-			} else if (v_opt) {
-				FPRINTF(stderr, "%s", bfr);
-				FFLUSH(stdout);
-				FFLUSH(stderr);
+		if (num_types == 0 || *type_list != '.') {
+			(void)fprintf(stderr, "Type-list must be .-separated\n"); 
+			exit(EXIT_FAILURE);
+		}
+		FileTypes = TypeAlloc(char *, num_types);
+		j = num_types;
+		do {
+			if (*--s == '.') {
+				FileTypes[--j] = strdup(s);
+#if SYS_UNIX			/* "." and "" are different types */
+				if (s[1] == EOS)
+					FileTypes[--j] = strdup("");
+#endif
+				*s = EOS;
 			}
-			conflict(absolute[j], j, argc, argv);
-			if (!a_opt && v_opt)
-				blip('\n');
-			j++;
+		} while (j != 0);
+		free(type_list);
+	}
+
+	/*
+	 * Build a list of the directories in the $PATH variable, excluding any
+	 * that happen to be the same inode (e.g., ".", or symbolically linked
+	 * directories).
+	 */
+	for (s = pathlist, j = 0; *s != EOS; s = t) {
+		for (k = 0; s[k] != PATHLIST_SEP; k++)
+			if ((bfr[k] = s[k]) == EOS)
+				break;
+
+		t = (s[k] != EOS) ? s+k+1 : s+k;
+		if (k == 0)
+			(void)strcpy(bfr, ".");
+		else
+			bfr[k] = EOS;
+
+		if (LookupDirs(bfr, j)) {
+			for (k = 0, found = FALSE; k < j; k++) {
+				if (SAME_DIRS(j,k)) {
+					found = TRUE;
+					break;
+				}
+			}
+			if (!found) {
+				dirs[j].name = MakeString(bfr);
+				j++;
+			}
 		}
 	}
-#if	NO_LEAKS
-	free_len = path_len = j;	/* reduce to non-redundant paths */
-#endif
+	path_len = j;
 
-	if (!a_opt) {
-		compress_list(relative);
+	/*
+	 * For each unique directory in $PATH, scan it, looking for executable
+	 * files.
+	 */
+	for (j = 0; j < path_len; j++) {
+		if (v_opt > 1) {
+			ShowConflicts(j+1, (INPATH *)0);
+			(void)printf("> %s\n", dirs[j].name);
+		} else if (do_blips) {
+			(void)fprintf(stderr, "%s", dirs[j].name);
+			(void)fflush(stdout);
+			(void)fflush(stderr);
+		}
+		ScanConflicts(dirs[j].name, j, argc, argv);
+		if (do_blips)
+			blip('\n');
+	}
+
+	/*
+	 * The normal (unverbose) listing shows only the conflicting files,
+	 * and the directories in which they are found.
+	 */
+	if (!v_opt)
+		compress_list();
+
+	if (!p_opt) {
 		for (j = 0; j < path_len; j++) {
-			show_conflict(j+1, (INPATH *)0);
-			PRINTF("> %s\n", relative[j]);
+			ShowConflicts(j+1, (INPATH *)0);
+			(void)printf("> %s\n", dirs[j].name);
 		}
 	}
 
 	if (total != 0) {
-		qsort((char *)inpath, (LEN_QSORT)total, sizeof(INPATH), compar);
+		qsort((char *)inpath, (size_t)total, sizeof(INPATH), cmp_INPATH);
 		for (j = 0; j < total; j++) {
-			if (l_opt || had_conflict(&inpath[j])) {
-				show_conflict((int)path_len, &inpath[j]);
-				PRINTF(": %s\n", inpath[j].name);
+			if ((v_opt > 1) || had_conflict(&inpath[j])) {
+				if (!p_opt)
+					ShowConflicts((int)path_len, &inpath[j]);
+				ShowPathnames(&inpath[j]);
 			}
 		}
 	}
+
+	/*
+	 * Test/debug: free all memory so we can validate the heap.
+	 */
 #if NO_LEAKS
-	for (j = 0; j < free_len; j++) {
-		free(absolute[j]);
+	if (FileTypes != 0) {
+		for (j = 0; j < num_types; j++)
+			free(FileTypes[j]);
+		free((char *)FileTypes);
 	}
-	for (j = 0; j < path_len; j++) {
-		free(relative[j]);
+	if (dirs != 0) {
+# if !USE_TXTALLOC
+		for (j = 0; j < path_len; j++) {
+			FreeString(dirs[j].name);
+		}
+# endif
+		free((char *)dirs);
 	}
-	vecfree(absolute);
-	vecfree(relative);
+	if (inpath != 0) {
+		for (j = 0; j < total; j++) {
+			FreeString(inpath[j].name);
+			free((char *)(inpath[j].node));
+		}
+		free((char *)inpath);
+	}
+	free(pathlist);
+	FreeString(dot);
+# if USE_TXTALLOC
+	free_txtalloc();
+# endif
+# if HAVE_DBMALLOC_H
+	malloc_dump(fileno(stdout));
+# endif
 #endif
-	(void)exit(SUCCESS);
+	(void)fflush(stderr);
+	(void)fflush(stdout);
+	(void)exit(EXIT_SUCCESS);
 	/*NOTREACHED*/
+	return 0;
 }
