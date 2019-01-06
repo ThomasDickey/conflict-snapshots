@@ -1,3 +1,9 @@
+conflict (20190106) unstable; urgency=low
+
+  * update/improve configure script macros
+
+ -- Thomas E. Dickey <dickey@invisible-island.net>  Sun, 06 Jan 2019 16:50:33 -0500
+
 conflict (20150705) unstable; urgency=low
 
   * update configure script, add --with-man2html option

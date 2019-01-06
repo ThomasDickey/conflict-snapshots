@@ -1,5 +1,15 @@
-$Id: CHANGES,v 6.22 2015/07/06 00:19:03 tom Exp $
+$Id: CHANGES,v 6.24 2019/01/06 21:54:05 tom Exp $
 ------------------------------------------------------------------------------
+
+2019/01/06
+	+ improve compiler-options in deb/rpm test-package scripts.
+	+ updated/improve configure macros:
+	  CF_ADD_CFLAGS, CF_APPEND_TEXT, CF_CC_ENV_FLAGS, CF_ENABLE_WARNINGS,
+	  CF_GCC_WARNINGS, CF_GNU_SOURCE, CF_INSTALL_OPTS, CF_INSTALL_OPT_P,
+	  CF_INSTALL_OPT_S, CF_POSIX_C_SOURCE, CF_POSIX_VISIBLE, CF_PROG_EXT,
+	  CF_PROG_GROFF, CF_PROG_LINT, CF_TRY_XOPEN_SOURCE, CF_WITH_MAN2HTML,
+	  CF_XOPEN_SOURCE.
+	+ update config.guess, config.sub
 
 2015/07/05
 	+ add configure option --with-man2html

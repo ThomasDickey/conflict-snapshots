@@ -1,13 +1,13 @@
-Summary: conflict - filename conflict listing
+Summary: filename conflict listing
 %define AppProgram conflict
-%define AppVersion 20150705
-# $XTermId: conflict.spec,v 1.7 2015/07/06 00:26:44 tom Exp $
+%define AppVersion 20190106
+# $XTermId: conflict.spec,v 1.9 2019/01/06 22:13:41 tom Exp $
 Name: %{AppProgram}
 Version: %{AppVersion}
 Release: 1
 License: MIT
 Group: Applications/Development
-URL: ftp://invisible-island.net/%{AppProgram}
+URL: ftp://ftp.invisible-island.net/%{AppProgram}
 Source0: %{AppProgram}-%{AppVersion}.tgz
 Packager: Thomas Dickey <dickey@invisible-island.net>
 
@@ -18,18 +18,21 @@ files in your path.
 
 %prep
 
+# no need for debugging symbols...
+%define debug_package %{nil}
+
 %setup -q -n %{AppProgram}-%{AppVersion}
 
 %build
 
 INSTALL_PROGRAM='${INSTALL}' \
-	./configure \
-		--program-prefix=b \
-		--target %{_target_platform} \
-		--prefix=%{_prefix} \
-		--bindir=%{_bindir} \
-		--libdir=%{_libdir} \
-		--mandir=%{_mandir}
+%configure \
+	--program-prefix=b \
+	--target %{_target_platform} \
+	--prefix=%{_prefix} \
+	--bindir=%{_bindir} \
+	--libdir=%{_libdir} \
+	--mandir=%{_mandir}
 
 make
 

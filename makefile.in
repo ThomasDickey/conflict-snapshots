@@ -1,8 +1,8 @@
-# $Id: makefile.in,v 6.30 2015/07/06 00:26:35 tom Exp $
+# $Id: makefile.in,v 6.31 2019/01/06 21:49:39 tom Exp $
 # Makefile-template for 'conflict'
 
 THIS		= conflict
-RELEASE		= t20150705
+RELEASE		= t20190106
 
 #### Start of system configuration section. ####
 
