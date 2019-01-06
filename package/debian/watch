@@ -1,4 +1,4 @@
 version=3
 
-opts=passive ftp://invisible-island.net/conflict/conflict-(\d+)\.tgz \
+opts=passive ftp://ftp.invisible-island.net/conflict/conflict-(\d+)\.tgz \
  debian  uupdate
