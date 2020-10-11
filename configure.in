@@ -1,7 +1,26 @@
+dnl ---------------------------------------------------------------------------
+dnl Copyright 1995-2015,2020 by Thomas E. Dickey.  All Rights Reserved.
+dnl
+dnl Permission to use, copy, modify, and distribute this software and its
+dnl documentation for any purpose and without fee is hereby granted, provided
+dnl that the above copyright notice appear in all copies and that both that
+dnl copyright notice and this permission notice appear in supporting
+dnl documentation, and that the name of the above listed copyright holder(s)
+dnl not be used in advertising or publicity pertaining to distribution of the
+dnl software without specific, written prior permission.
+dnl
+dnl THE ABOVE LISTED COPYRIGHT HOLDER(S) DISCLAIM ALL WARRANTIES WITH REGARD
+dnl TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+dnl FITNESS, IN NO EVENT SHALL THE ABOVE LISTED COPYRIGHT HOLDER(S) BE LIABLE
+dnl FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+dnl WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+dnl ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
+dnl IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+dnl ---------------------------------------------------------------------------
 dnl Process this file with 'autoconf' to produce a 'configure' script
-dnl $Id: configure.in,v 6.11 2015/07/06 00:22:17 tom Exp $
-AC_REVISION($Revision: 6.11 $)
-AC_PREREQ(2.13.20020210)
+dnl $Id: configure.in,v 6.13 2020/10/11 14:14:01 tom Exp $
+AC_REVISION($Revision: 6.13 $)
+AC_PREREQ(2.52.20200802)
 AC_INIT(conflict.c)
 AC_CONFIG_HEADER(config.h:config_h.in)
 

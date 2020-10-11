@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1995-2004,2010 by Thomas E. Dickey.  All Rights Reserved.        *
+ * Copyright 1995-2010,2020 by Thomas E. Dickey.  All Rights Reserved.        *
  *                                                                            *
  * Permission to use, copy, modify, and distribute this software and its      *
  * documentation for any purpose and without fee is hereby granted, provided  *
@@ -18,11 +18,9 @@
  * IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.                *
  ******************************************************************************/
 
-#ifndef	NO_IDENT
-static const char Id[] = "$Id: txtalloc.c,v 6.5 2010/06/27 21:58:28 tom Exp $";
-#endif
-
 /*
+ * $Id: txtalloc.c,v 6.6 2020/10/11 14:07:20 tom Exp $
+ *
  * Title:	txtalloc.c (text-allocator)
  * Author:	T.E.Dickey
  * Created:	29 Apr 1988

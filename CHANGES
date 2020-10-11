@@ -1,5 +1,14 @@
-$Id: CHANGES,v 6.24 2019/01/06 21:54:05 tom Exp $
+$Id: CHANGES,v 6.26 2020/10/11 14:35:30 tom Exp $
 ------------------------------------------------------------------------------
+
+2020/10/11
+	+ cross-compile for MinGW.
+	+ align manpage-macros with ded
+	+ updated/improve configure macros:
+	  CF_ADD_CFLAGS, CF_CLANG_COMPILER, CF_ENABLE_WARNINGS,
+	  CF_FIX_WARNINGS, CF_GCC_ATTRIBUTE,S CF_GCC_VERSION, CF_GCC_WARNINGS,
+	  CF_PROG_CC, CF_PROG_LINT.
+	+ update config.guess, config.sub
 
 2019/01/06
 	+ improve compiler-options in deb/rpm test-package scripts.

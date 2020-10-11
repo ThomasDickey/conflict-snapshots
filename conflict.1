@@ -1,5 +1,5 @@
 .\"*****************************************************************************
-.\" Copyright 1995-2010,2011 by Thomas E. Dickey.  All Rights Reserved.        *
+.\" Copyright 1995-2011,2020 by Thomas E. Dickey.  All Rights Reserved.        *
 .\"                                                                            *
 .\" Permission to use, copy, modify, and distribute this software and its      *
 .\" documentation for any purpose and without fee is hereby granted, provided  *
@@ -17,16 +17,17 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR *
 .\" IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.                *
 .\"*****************************************************************************
-.\" $Id: conflict.1,v 6.6 2011/02/27 18:14:46 tom Exp $
-.de Es
-.RS
+.\" $Id: conflict.1,v 6.7 2020/10/11 13:47:28 tom Exp $
+.de Ex
+.RS +7
+.PP
 .nf
-.sp
+.ft CW
 ..
 .de Ee
 .fi
+.ft R
 .RE
-.sp .5
 ..
 .TH CONFLICT 1
 .hy 0
@@ -72,8 +73,8 @@ specify another environment variable than PATH
 for compatibility with C-preprocessor options, build up the search path
 with the given directory.
 (The corresponding \fB\-D\fP and \fB\-U\fP options are ignored.)
-Using the \fB\-I\fP or \fB\-L\fP options overrides the use of environment variables
-for the search path.
+Using the \fB\-I\fP or \fB\-L\fP options
+overrides the use of environment variables for the search path.
 .TP
 .B \-i
 ignore case when comparing filenames (see \fB\-c\fP).
@@ -97,8 +98,8 @@ specify a list of file types which are treated as conflicting.
 The option value is a list of file suffixes (a "." followed by
 zero or more other characters).
 The list separator is the "." which begins each suffix, e.g.,
-.Es
-	conflict \-t.exe.com
+.Ex
+conflict \-t.exe.com
 .Ee
 .IP
 If no \fB\-t\fP option is given,
@@ -149,12 +150,12 @@ path (if no arguments are given), or to find conflicts for a specified
 name.
 To list only conflicts from a particular directory "path"
 you may type
-.Es
+.Ex
 conflict \-a path/*
 .Ee
 .PP
 An example of the use of \fBconflict\fR is shown below
-.Es
+.Ex
 bsd4.2(5) conflict
 Current working directory is "/home/dickey/src/conflict"
 -> .
