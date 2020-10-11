@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1995-2010,2011 by Thomas E. Dickey.  All Rights Reserved.        *
+ * Copyright 1988-2011,2020 by Thomas E. Dickey.  All Rights Reserved.        *
  *                                                                            *
  * Permission to use, copy, modify, and distribute this software and its      *
  * documentation for any purpose and without fee is hereby granted, provided  *
@@ -18,11 +18,9 @@
  * IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.                *
  ******************************************************************************/
 
-#ifndef	NO_IDENT
-static const char Id[] = "$Id: conflict.c,v 6.19 2011/02/27 18:02:32 tom Exp $";
-#endif
-
 /*
+ * $Id: conflict.c,v 6.20 2020/10/11 14:21:20 tom Exp $
+ *
  * Title:	conflict.c (path-conflict display)
  * Author:	T.E.Dickey
  * Created:	15 Apr 1988

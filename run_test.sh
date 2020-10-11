@@ -1,5 +1,24 @@
 #!/bin/sh
-# $Id: run_test.sh,v 6.3 2004/06/20 23:13:23 tom Exp $
+###############################################################################
+# Copyright 1989-2004,2020 by Thomas E. Dickey.  All Rights Reserved.
+#
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted, provided
+# that the above copyright notice appear in all copies and that both that
+# copyright notice and this permission notice appear in supporting
+# documentation, and that the name of the above listed copyright holder(s)
+# not be used in advertising or publicity pertaining to distribution of the
+# software without specific, written prior permission.
+#
+# THE ABOVE LISTED COPYRIGHT HOLDER(S) DISCLAIM ALL WARRANTIES WITH REGARD
+# TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+# FITNESS, IN NO EVENT SHALL THE ABOVE LISTED COPYRIGHT HOLDER(S) BE LIABLE
+# FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
+# IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+################################################################################
+# $Id: run_test.sh,v 6.5 2020/10/11 17:32:05 tom Exp $
 # Run a test to show that CONFLICT is working
 BIN=`pwd`
 PROG=$BIN/conflict
@@ -29,9 +48,9 @@ $PROG -p -r -t.c.o. conflict
 DIR=`mktemp -d ${TMPDIR-/tmp}/conflict.XXXXXX 2>/dev/null`
 if test -z "$DIR" ; then
 	DIR=/tmp/conflict.$$
-	mkdir $DIR 	
+	mkdir $DIR
 fi
-trap "cd /;rm -rf $DIR" 0 1 2 5 15
+trap "cd /;rm -rf $DIR" EXIT INT QUIT HUP TERM
 cd $DIR || exit 1
 
 cat <<eof/
@@ -50,7 +69,9 @@ eof/
 # try to test conflicts on case-insensitive systems
 TEST=conflict
 rm -f $TEST
-touch $TEST
+cat >$TEST <<EOF
+EOF
+#touch $TEST
 if test -f Conflict ; then
 	TEST=Conflict
 	rm -f $TEST

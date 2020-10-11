@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1995,2004 by Thomas E. Dickey.  All Rights Reserved.             *
+ * Copyright 1995-2004,2020 by Thomas E. Dickey.  All Rights Reserved.        *
  *                                                                            *
  * Permission to use, copy, modify, and distribute this software and its      *
  * documentation for any purpose and without fee is hereby granted, provided  *
@@ -18,9 +18,9 @@
  * IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.                *
  ******************************************************************************/
 
-#ifndef NO_IDENT
-static char *Id = "$Id: os2.c,v 6.2 2004/06/19 14:37:37 tom Exp $";
-#endif
+/*
+ * $Id: os2.c,v 6.3 2020/10/11 14:07:20 tom Exp $
+ */
 
 #include "conflict.h"
 
