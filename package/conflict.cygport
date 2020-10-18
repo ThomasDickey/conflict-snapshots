@@ -1,0 +1,50 @@
+#!/usr/bin/cygport
+
+NAME="conflict"
+VERSION=20201011
+RELEASE=1
+
+CATEGORY="Utils"
+SUMMARY="Display conflicting filenames"
+DESCRIPTION="Conflict displays conflicting filenames in your execution path.
+Unlike the csh command which, it displays all of the (non-alias) executable
+files in your path."
+
+SITE=invisible-island.net
+HOMEPAGE=https://invisible-island.net/conflict/conflict.html
+SRC_URI="https://invisible-mirror.net/archives/conflict/conflict-${VERSION}.tgz"
+
+# Build dependencies
+DEPEND="autoconf binutils gcc-core make"
+BUILD_REQUIRES="$DEPEND"
+
+# cannot autoreconf
+src_compile() {
+	cd $B
+	cygconf
+	cygmake
+}
+
+src_test()
+{
+	cd $B
+	cygmake check
+}
+
+# SPDX-License-Identifier: MIT-like
+LICENSE="MIT-like"
+LICENSE_SPDX="SPDX-License-Identifier: MIT-like"
+LICENSE_URI="COPYING"
+
+CYGWIN_MAINTAINER="Thomas%20Dickey"
+CYGWIN_MAINTAINER_EMAIL="dickey@$SITE"
+
+UPSTREAM_MAINTAINER="Thomas%20Dickey"
+UPSTREAM_MAINTAINER_EMAIL="dickey@$SITE"
+UPSTREAM_EMAIL="dickey@his.com"
+SUBJECT="${OSTYPE^}%20Package%20$NAME%20$VERSION"
+MAILTO="mailto:$UPSTREAM_MAINTAINER_EMAIL,$UPSTREAM_EMAIL\
+?to=$UPSTREAM_MAINTAINER%20%3C$UPSTREAM_MAINTAINER_EMAIL%3E\
+&to=$UPSTREAM_MAINTAINER%20%3C$UPSTREAM_EMAIL%3E\
+&from=$CYGWIN_MAINTAINER%20%3C$CYGWIN_MAINTAINER_EMAIL%3E\
+&subject=$SUBJECT&body=$SUBJECT"

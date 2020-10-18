@@ -1,4 +1,4 @@
-MANIFEST for conflict, version t20201011
+MANIFEST for conflict, version t20201018
 --------------------------------------------------------------------------------
 MANIFEST                        this file
 CHANGES                         change-log for 'conflict'
@@ -22,6 +22,7 @@ run_test.sh                     UNIX test-script for 'conflict'
 txtalloc.c                      text-allocator
 unix.c                          UNIX support functions
 package                         subdirectory
+package/conflict.cygport        build-script
 package/conflict.spec           build-script for conflict
 package/debian                  subdirectory
 package/debian/changelog        build-script for conflict
