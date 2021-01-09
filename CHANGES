@@ -1,5 +1,9 @@
-$Id: CHANGES,v 6.27 2020/10/11 17:32:05 tom Exp $
+$Id: CHANGES,v 6.29 2021/01/09 00:05:32 tom Exp $
 ------------------------------------------------------------------------------
+
+2021/01/08
+	+ updated/improve configure macros
+	+ update config.guess, config.sub
 
 2020/10/18
 	+ fix for out-of-tree builds
