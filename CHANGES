@@ -1,5 +1,12 @@
-$Id: CHANGES,v 6.29 2021/01/09 00:05:32 tom Exp $
+$Id: CHANGES,v 6.30 2022/10/02 14:24:49 tom Exp $
 ------------------------------------------------------------------------------
+
+2022/10/02
+	+ updated/improve configure macros
+	  CF_DISABLE_ECHO, CF_DISABLE_LEAKS, CF_FIX_WARNINGS,
+	  CF_GCC_ATTRIBUTES, CF_MAKE_DOCS, CF_NO_LEAKS_OPTION, CF_PROG_LINT,
+	  CF_TRY_XOPEN_SOURCE, CF_WITHOUT_X, CF_XOPEN_SOURCE
+	+ update config.guess, config.sub
 
 2021/01/08
 	+ updated/improve configure macros
