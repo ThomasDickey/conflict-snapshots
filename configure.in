@@ -1,5 +1,5 @@
 dnl ---------------------------------------------------------------------------
-dnl Copyright 1995-2021,2022 by Thomas E. Dickey.
+dnl Copyright 1995-2022,2023 by Thomas E. Dickey.
 dnl All Rights Reserved.
 dnl
 dnl Permission to use, copy, modify, and distribute this software and its
@@ -19,8 +19,8 @@ dnl ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
 dnl IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 dnl ---------------------------------------------------------------------------
 dnl Process this file with 'autoconf' to produce a 'configure' script
-dnl $Id: configure.in,v 6.15 2022/10/02 14:29:25 tom Exp $
-AC_REVISION($Revision: 6.15 $)
+dnl $Id: configure.in,v 6.16 2023/01/30 01:14:36 tom Exp $
+AC_REVISION($Revision: 6.16 $)
 AC_PREREQ(2.52.20200802)
 AC_INIT(conflict.c)
 AC_CONFIG_HEADER(config.h:config_h.in)
@@ -54,9 +54,8 @@ CF_INSTALL_OPTS
 AC_PROG_EGREP
 AC_PROG_FGREP
 
-AC_HEADER_STDC
-AC_CHECK_HEADERS(stdlib.h unistd.h)
-AC_CHECK_HEADERS(getopt.h string.h malloc.h sys/param.h)
+AC_CHECK_DECL(exit)
+AC_CHECK_HEADERS(getopt.h malloc.h sys/param.h)
 AC_HEADER_DIRENT
 
 CF_XOPEN_SOURCE
