@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1995-2011,2020 by Thomas E. Dickey.  All Rights Reserved.        *
+ * Copyright 1995-2020,2024 by Thomas E. Dickey.  All Rights Reserved.        *
  *                                                                            *
  * Permission to use, copy, modify, and distribute this software and its      *
  * documentation for any purpose and without fee is hereby granted, provided  *
@@ -18,7 +18,7 @@
  * IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.                *
  ******************************************************************************/
 
-/* $Id: conflict.h,v 6.13 2020/10/11 14:36:04 tom Exp $
+/* $Id: conflict.h,v 6.14 2024/04/29 20:53:35 tom Exp $
  *
  * Common/configurable definitions and types for 'conflict'.
  */
@@ -234,8 +234,8 @@ extern char *optarg;
 #endif
 
 #define TypeRealloc(type,p,n) (type *)realloc(p,(n)*sizeof(type))
-#define TypeAlloc(type,n)     (type *)calloc(sizeof(type),n)
-#define TypeAllocN(type,n)    (type *)calloc(sizeof(type)+n,1)
+#define TypeAlloc(type,n)     (type *)calloc(n,sizeof(type))
+#define TypeAllocN(type,n)    (type *)calloc(1,sizeof(type)+n)
 
 #undef  SIZEOF
 #define SIZEOF(v) (sizeof(v)/sizeof(v[0]))

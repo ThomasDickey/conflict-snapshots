@@ -1,5 +1,10 @@
-$Id: CHANGES,v 6.31 2023/01/30 01:14:48 tom Exp $
+$Id: CHANGES,v 6.33 2024/04/29 22:45:30 tom Exp $
 ------------------------------------------------------------------------------
+
+2024/04/29
+	+ import formatting/style of manpage
+	+ updated/improve configure macros
+	+ update config.guess, config.sub
 
 2023/01/30
 	+ updated/improve configure script to reduce compiler warnings

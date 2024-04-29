@@ -1,4 +1,4 @@
-MANIFEST for conflict, version t20230130
+MANIFEST for conflict, version t20240429
 --------------------------------------------------------------------------------
 MANIFEST                        this file
 CHANGES                         change-log for 'conflict'
@@ -31,10 +31,9 @@ package/debian/control          build-script for conflict
 package/debian/copyright        build-script for conflict
 package/debian/docs             build-script for conflict
 package/debian/rules            build-script for conflict
+package/debian/watch            build-script for conflict
 package/debian/source           subdirectory
 package/debian/source/format    build-script for conflict
-package/debian                  subdirectory
-package/debian/watch            build-script for conflict
 win32                           subdirectory
 win32/conflict.mak              Visual C project
 win32/dirent.c                  dirent replacement for win32

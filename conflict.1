@@ -1,5 +1,5 @@
 .\"*****************************************************************************
-.\" Copyright 1995-2020,2022 by Thomas E. Dickey.  All Rights Reserved.        *
+.\" Copyright 1995-2022,2024 by Thomas E. Dickey.  All Rights Reserved.        *
 .\"                                                                            *
 .\" Permission to use, copy, modify, and distribute this software and its      *
 .\" documentation for any purpose and without fee is hereby granted, provided  *
@@ -17,24 +17,29 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR *
 .\" IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.                *
 .\"*****************************************************************************
-.\" $Id: conflict.1,v 6.8 2022/10/02 14:26:05 tom Exp $
+.\" $Id: conflict.1,v 6.9 2024/04/29 22:43:24 tom Exp $
+.TH CONFLICT 1 2024-04-29 "Check filename-conflicts" "User commands"
+.ie n .ds CW R
+.el   \{
+.ie \n(.g .ds CW CR
+.el       .ds CW CW
+.\}
 .de Ex
 .RS +7
 .PP
 .nf
-.ft CW
+.ft \*(CW
 ..
 .de Ee
 .fi
 .ft R
 .RE
 ..
-.TH CONFLICT 1
 .hy 0
 .
 .SH NAME
-\fBconflict\fR \- filename conflict listing
-.
+\fBconflict\fR \-
+filename conflict listing
 .SH SYNOPSIS
 \fBconflict\fI [options] [file-specifications]\fP
 .
@@ -179,15 +184,17 @@ MSDOS, Win32 and OS/2 command-line.
 .SH FILES
 \fBConflict\fR is a single binary module, which uses no auxiliary files.
 .
-.SH ANTICIPATED CHANGES
+.SH "ANTICIPATED CHANGES"
 add option to get aliases from the shell
 .PP
 handle compound directory structures such as MANPATH.
 .PP
 show symbol conflicts from object files and libraries.
 .
-.SH SEE ALSO
-csh (1) for a discussion of \fIwhich\fR.
-.
-.SH AUTHOR
+.SH AUTHORS
 Thomas Dickey
+.
+.SH SEE ALSO
+\fBsh\fR(1) for a discussion of \fItype\fR.
+.br
+\fBcsh\fR(1) for a discussion of \fIwhich\fR.

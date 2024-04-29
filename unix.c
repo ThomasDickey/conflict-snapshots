@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1995-2004,2020 by Thomas E. Dickey.  All Rights Reserved.        *
+ * Copyright 1995-2020,2024 by Thomas E. Dickey.  All Rights Reserved.        *
  *                                                                            *
  * Permission to use, copy, modify, and distribute this software and its      *
  * documentation for any purpose and without fee is hereby granted, provided  *
@@ -19,7 +19,7 @@
  ******************************************************************************/
 
 /*
- * $Id: unix.c,v 6.3 2020/10/11 14:07:29 tom Exp $
+ * $Id: unix.c,v 6.4 2024/04/29 22:59:10 tom Exp $
  */
 
 #include "conflict.h"
@@ -27,9 +27,11 @@
 void
 blip(int c)
 {
+    static int more = 1;
     static char text[] = "?";
     text[0] = (char) c;
-    write(fileno(stderr), text, 1);
+    if (more && write(fileno(stderr), text, 1) <= 0)
+	more = 0;
 }
 
 char *

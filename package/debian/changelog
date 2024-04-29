@@ -1,3 +1,9 @@
+conflict (20240429) unstable; urgency=low
+
+  * maintenance updates
+
+ -- Thomas E. Dickey <dickey@invisible-island.net>  Mon, 29 Apr 2024 16:42:00 -0400
+
 conflict (20230130) unstable; urgency=low
 
   * maintenance updates
