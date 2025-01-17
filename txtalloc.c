@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1995-2010,2020 by Thomas E. Dickey.  All Rights Reserved.        *
+ * Copyright 1995-2020,2025 by Thomas E. Dickey.  All Rights Reserved.        *
  *                                                                            *
  * Permission to use, copy, modify, and distribute this software and its      *
  * documentation for any purpose and without fee is hereby granted, provided  *
@@ -19,7 +19,7 @@
  ******************************************************************************/
 
 /*
- * $Id: txtalloc.c,v 6.6 2020/10/11 14:07:20 tom Exp $
+ * $Id: txtalloc.c,v 6.8 2025/01/17 23:09:04 tom Exp $
  *
  * Title:	txtalloc.c (text-allocator)
  * Author:	T.E.Dickey
@@ -57,8 +57,8 @@ new_TNODE(char *text)
 {
     register TNODE *p = TypeAllocN(TNODE, strlen(text));
     (void) strcpy(KEY(p), text);
-    LLINK(p) = 0;
-    RLINK(p) = 0;
+    LLINK(p) = NULL;
+    RLINK(p) = NULL;
     B(p) = 0;
     return (p);
 }
@@ -76,7 +76,7 @@ txtalloc(char *text)
     int a;
     char *value;
 
-    if (p == 0) {
+    if (p == NULL) {
 	RLINK(t) = p = new_TNODE(text);
 	return (KEY(p));
     }

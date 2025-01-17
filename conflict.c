@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1988-2011,2020 by Thomas E. Dickey.  All Rights Reserved.        *
+ * Copyright 1988-2024,2025 by Thomas E. Dickey.  All Rights Reserved.        *
  *                                                                            *
  * Permission to use, copy, modify, and distribute this software and its      *
  * documentation for any purpose and without fee is hereby granted, provided  *
@@ -19,7 +19,7 @@
  ******************************************************************************/
 
 /*
- * $Id: conflict.c,v 6.20 2020/10/11 14:21:20 tom Exp $
+ * $Id: conflict.c,v 6.22 2025/01/17 23:09:04 tom Exp $
  *
  * Title:	conflict.c (path-conflict display)
  * Author:	T.E.Dickey
@@ -39,6 +39,8 @@
 #include "conflict.h"
 
 #define	CHUNK	0xff		/* (2**n) - 1 chunk for reducing realloc's */
+
+static GCC_NORETURN void usage(void);
 
 static INPATH *inpath;
 static DIRS *dirs;
@@ -189,9 +191,9 @@ ShowConflicts(unsigned len, INPATH * ip)
     char flags[BUFSIZ];
 
     for (j = k = 0; j < len; j++) {
-	if (FileTypes == 0) {
+	if (FileTypes == NULL) {
 	    register int d = '-';
-	    if (ip != 0) {
+	    if (ip != NULL) {
 		if (IS_A_NODE(j)) {
 		    d = '*';
 		    if (!found) {
@@ -211,7 +213,7 @@ ShowConflicts(unsigned len, INPATH * ip)
 	    flags[k] = '-';
 	flags[k - 1] = EOS;
 	flags[0] = ':';
-	if (ip != 0 && IS_A_NODE(j)) {
+	if (ip != NULL && IS_A_NODE(j)) {
 	    for (k = 0; k < num_types; k++) {
 		if ((type_t) (1 << k) & NODEFLAGS(j)) {
 		    char *s = FileTypes[k];
@@ -237,7 +239,7 @@ TypesOf(size_t len, INPATH * ip)
 #else
     static char *result;
 
-    if (result == 0)
+    if (result == NULL)
 	result = (char *) malloc((num_types * 4) + 1);
 #endif
 
@@ -362,7 +364,7 @@ had_conflict(INPATH * ip)
     for (j = 0; j < path_len; j++) {
 	if ((mask = NODEFLAGS(j)) != 0) {
 
-	    if (FileTypes == 0) {
+	    if (FileTypes == NULL) {
 		if (!first)
 		    return TRUE;
 		first = FALSE;
@@ -444,7 +446,7 @@ static int
 SameName(char *a, char *b)
 {
     int result;
-    if (FileTypes == 0) {
+    if (FileTypes == NULL) {
 	result = SameString(a, b);
     } else {
 	result = SameTypeless(a, b);
@@ -554,7 +556,7 @@ ScanConflicts(char *path, unsigned inx, int argc, char **argv)
 		continue;
 	    ok = 1;
 #endif
-	    if (FileTypes != 0) {
+	    if (FileTypes != NULL) {
 		if ((ok = LookupType(the_name)) == 0)
 		    continue;
 	    }
@@ -577,7 +579,7 @@ ScanConflicts(char *path, unsigned inx, int argc, char **argv)
 	    } else {
 		if (!(total & CHUNK)) {
 		    size_t need = (((total * 3) / 2) | CHUNK) + 1;
-		    if (inpath != 0)
+		    if (inpath != NULL)
 			inpath = TypeRealloc(INPATH, inpath, need);
 		    else
 			inpath = TypeAlloc(INPATH, need);
@@ -613,7 +615,7 @@ AddToPath(char *path)
 {
     size_t need = strlen(path) + 1;
 
-    if (pathlist != 0) {
+    if (pathlist != NULL) {
 	size_t have = strlen(pathlist);
 	pathlist = (char *) realloc(pathlist, have + need + 1);
 	(void) sprintf(pathlist + have, "%c%s", PATHLIST_SEP, path);
@@ -672,7 +674,7 @@ main(int argc, char *argv[])
     int found, j, value;
     unsigned k, kk;
     char *s, *t;
-    char *type_list = 0;
+    char *type_list = NULL;
     char bfr[MAXPATHLEN];
 
     caseless = C_VALUE;
@@ -767,7 +769,7 @@ main(int argc, char *argv[])
      * Get the current working-directory, so we have a reference point to
      * go back after scanning directories.
      */
-    if (getwd(bfr) == 0)
+    if (getwd(bfr) == NULL)
 	failed("getcwd");
     dot = MakeString(bfr);
     if (!p_opt)
@@ -776,11 +778,11 @@ main(int argc, char *argv[])
     /*
      * Obtain the list of directories that we'll scan.
      */
-    if (pathlist == 0) {
-	if (env_name == 0)
+    if (pathlist == NULL) {
+	if (env_name == NULL)
 	    env_name = "PATH";
 
-	if ((s = getenv(env_name)) != 0)
+	if ((s = getenv(env_name)) != NULL)
 	    pathlist = strdup(s);
 	else
 	    failed(env_name);
@@ -809,7 +811,7 @@ main(int argc, char *argv[])
 	    type_list = TYPES_PATH;
     }
 #endif
-    if (type_list != 0) {
+    if (type_list != NULL) {
 	type_list = DOS_upper(strdup(type_list));
 	for (s = type_list, num_types = 0; *s != EOS; s++) {
 	    if (*s == '.') {

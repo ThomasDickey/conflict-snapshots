@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1995-2020,2024 by Thomas E. Dickey.  All Rights Reserved.        *
+ * Copyright 1995-2024,2025 by Thomas E. Dickey.  All Rights Reserved.        *
  *                                                                            *
  * Permission to use, copy, modify, and distribute this software and its      *
  * documentation for any purpose and without fee is hereby granted, provided  *
@@ -19,7 +19,7 @@
  ******************************************************************************/
 
 /*
- * $Id: unix.c,v 6.4 2024/04/29 22:59:10 tom Exp $
+ * $Id: unix.c,v 6.6 2025/01/17 23:09:04 tom Exp $
  */
 
 #include "conflict.h"
@@ -38,7 +38,7 @@ char *
 fleaf(char *name)
 {
     char *leaf = strrchr(name, PATHNAME_SEP);
-    if (leaf != 0)
+    if (leaf != NULL)
 	leaf++;
     else
 	leaf = name;
@@ -50,7 +50,7 @@ ftype(char *name)
 {
     char *leaf = fleaf(name);
     char *type = strrchr(leaf, '.');
-    if (type == 0)
+    if (type == NULL)
 	type = leaf + strlen(leaf);
     return type;
 }

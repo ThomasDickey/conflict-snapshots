@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1995-2020,2024 by Thomas E. Dickey.  All Rights Reserved.        *
+ * Copyright 1995-2024,2025 by Thomas E. Dickey.  All Rights Reserved.        *
  *                                                                            *
  * Permission to use, copy, modify, and distribute this software and its      *
  * documentation for any purpose and without fee is hereby granted, provided  *
@@ -18,7 +18,7 @@
  * IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.                *
  ******************************************************************************/
 
-/* $Id: conflict.h,v 6.14 2024/04/29 20:53:35 tom Exp $
+/* $Id: conflict.h,v 6.17 2025/01/17 23:15:16 tom Exp $
  *
  * Common/configurable definitions and types for 'conflict'.
  */
@@ -267,6 +267,10 @@ extern char *optarg;
 #define MAXPATHLEN PATH_MAX	/* assume POSIX if nothing else */
 #endif
 
+#ifndef GCC_NORETURN
+#define GCC_NORETURN /*nothing */
+#endif
+
 #if SYS_MSDOS || SYS_OS2 || SYS_WIN32
 # define PATHNAME_SEP '\\'
 # define PATHLIST_SEP ';'
@@ -335,7 +339,7 @@ typedef struct {
  * Prototypes for functions defined in this program:
  */
 extern int main(int argc, char *argv[]);
-extern void failed(const char *s);
+extern GCC_NORETURN void failed(const char *s);
 extern char *fleaf(char *name);
 extern char *ftype(char *name);
 extern void blip(int c);
